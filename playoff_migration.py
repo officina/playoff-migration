@@ -10,9 +10,14 @@ class PlayoffMigration(object):
     def __str__(self):
         return f'playoff={self._playoff}'
 
+<<<<<<< HEAD
     def check_game(self, original_id:str) -> bool:
         # call playoff to check for game with id:
         return false
+=======
+    def clone_game(self, original_id:str) -> str:
+        return "no_id"
+>>>>>>> f7d3e4801fca87889d06c19a0f3fd75e4b035562
 
 
 
