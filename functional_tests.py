@@ -11,19 +11,17 @@ class PlayoffMigrationTest(unittest.TestCase):
     pm:PlayoffMigration
 
     def setUp(self):
-        pl = Playoff(
-        client_id="MjQ5NWMxMTYtMjBjZi00M2IwLTk3NzEtOWM1YWY1ODQ3Mzll",
-        client_secret="OTJlZTMzZTAtMzYzOC00ZDNmLTgxZTAtY2QwNjczZGUzODZjNjZhMWY3NjAtMjg5Yy0xMWU4LWE1ZTUtZTlhOTg0MGEwZTFh",
-        type='client',
-        allow_unsecure=True
-        )
-        self.pm = PlayoffMigration(pl)
+
+        self.pm = PlayoffMigration()
         self.browser = webdriver.Chrome()
     
     def tearDown(self):
         self.browser.quit()
 
-    
+    def test_exists_original_game(self):
+        game_exist = self.pm.check_game("GameLabNoTargetV01")
+        self.assertTrue(game_exist)
+
     def test_a_game_exists_with_id_gamelab_clone1(self):
         
         # esiste un gioco su playoff clone di id gamelab_target che si chiama gamelab_clone1
