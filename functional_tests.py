@@ -6,6 +6,7 @@ from playoff import Playoff
 from playoff_migration import PlayoffMigration
 from playoff_migration import Games
 
+
 class PlayoffMigrationTest(unittest.TestCase):
     
     pm: PlayoffMigration
@@ -19,21 +20,20 @@ class PlayoffMigrationTest(unittest.TestCase):
         # self.browser.quit()
         pass
 
+    # esiste un gioco su playoff con id GameLabNoTargetV01
     def test_exists_original_game(self):
-        # game_exist = self.pm.get_game_id(self.pm.Games("original")) == "GameLabNoTargetV01"
         self.assertTrue(self.pm.get_game_id(Games.original) == "GameLabNoTargetV01")
 
-    def test_a_game_exists_with_id_gamelab_clone1(self):
-        
-        # esiste un gioco su playoff clone di id gamelab_target che si chiama gamelab_clone1
-        # game_exists = self.pm.get_game_id(self.pm.Games("cloned")) == "GameLabClonScoped"
+    # esiste un gioco su playoff con id GameLabClonScoped
+    def test_exists_cloned_game(self):
         self.assertTrue(self.pm.get_game_id(Games.cloned) == "GameLabClonScoped")
 
-    def test_gamelab_clone1_contains_all_teams_from_gamelab_original(self):
-        # il gioco nuovo contiene i team del gioco vecchio
-        team_equals = self.pm.check_all_teams()
-        self.assertTrue(team_equals)
+    # il gioco nuovo contiene i team del gioco vecchio
+    def test_cloned_game_contains_all_teams_from_original_game(self):
+        self.assertTrue(self.pm.get_teams(Games.original) == self.pm.get_teams(Games.cloned))
 
+
+#=======
     def test_gamelab_clone1_contains_all_players_from_gamelab_original(self):
         # il gioco nuovo contiene tutti gli utenti del gioco vecchio
         player_equals = self.pm.check_all_players()

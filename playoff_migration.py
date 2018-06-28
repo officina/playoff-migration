@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from pprint import pprint
 from enum import Enum
+import sys
 
 
 class Games(Enum):
@@ -32,8 +33,9 @@ class PlayoffMigration(object):
             allow_unsecure=True
         )
 
+    # TODO : choose a better rappresentation of PlayoffMigration object
     def __str__(self):
-        return f'playoff={self._original}'
+        return f'playoff={self._original}' + f'playoff={self._cloned}'
 
     def get_game_id(self, game: Games) -> str:
         if game == Games.original:
@@ -41,20 +43,42 @@ class PlayoffMigration(object):
         elif game == Games.cloned:
             return self._cloned.get('/admin')["game"]["id"]
 
-    def check_game(self, game_id: str, client_playoff: Playoff) -> bool:
-        # call playoff to check for game with id:
-        response = client_playoff.get('/admin')
-        pprint(response)
-        id = response["game"]["id"]
-        print(id)
-        return game_id == id
+    # TODO : check if not sorting dict is a problem
+    def get_teams(self, game: Games):
+        teams = {}
+        if game == Games.original:
+            teams = self._original.get('/admin/teams', {})
+        elif game == Games.cloned:
+            teams = self._cloned.get('/admin/teams', {})
+        teams_id = {}
+        count = 0
+        for item in teams['data']:
+            teams_id.update({'id' + str(count): item['id']})
+            count += 1
+        return teams_id
 
-    def check_all_teams(self):
-        response1 = self._original.get('/admin/teams', {})
-        response2 = self._cloned.get('/admin/teams', {})
-        pprint(response1)
-        pprint(response2)
-        return sorted(response1) == sorted(response2)
+    def get_numbers_players(self, game: Games):
+        if game == Games.original:
+            return self._original.get('/admin/players', {})['total']
+        if game == Games.cloned:
+            return self._cloned.get('/admin/players', {})['total']
+
+    # TODO : check if not sorting dict is a problem
+    def get_players(self, game: Games):
+        number_of_players = str(self.get_numbers_players(game))
+        players = {}
+        if game == Games.original:
+            players = self._original.get('/admin/players', {"limit": "100"})
+        elif game == Games.cloned:
+            players = self._cloned.get('/admin/players', {"limit": "16"})
+        players_id = {}
+        count = 0
+        for item in players['data']:
+            players_id.update({count: item['id']})
+            count += 1
+        #return players_id
+        pprint(players)
+        pprint(players_id)
 
     def check_all_players(self):
         response1 = self._original.get('/admin/players', {})
@@ -73,7 +97,5 @@ il blocco di codice successivo viene eseguito solo se è il modulo principale
 quindi solo se eseguo "python playoff_migration.py"
 """
 if __name__ == '__main__':
-    print("Eseguito il main di playoff_migration")
     p = PlayoffMigration()
-    a = p.check_game('asd', p._original)
-    print(a)
+    p.get_players(Games.original)
