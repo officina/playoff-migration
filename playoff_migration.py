@@ -144,6 +144,8 @@ class PlayoffMigration(object):
 
         return players_by_teams
 
+    def get_players_feed(self, game: Games, player_id):  # manca un parametro? (i giocatori?)
+        pass
 
 
 """
