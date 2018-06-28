@@ -37,11 +37,10 @@ class PlayoffMigrationTest(unittest.TestCase):
         self.assertTrue(self.pm.get_players_by_id(Games.original) == self.pm.get_players_by_id(Games.cloned))
 
     # i giocatori del gioco nuovo sono associati agli stessi team del gioco vecchio
-    def test_gamelab_clone1_team_players_match_team_players_gamelab_original(self):
-        self.test_cloned_game_contains_all_teams_from_original_game()
+    def test_original_game_players_by_team_match_cloned_ones(self):
+        self.test_cloned_game_contains_all_teams_from_original_game() # check if both games have same number of teams
+        self.assertTrue(self.pm.get_players_by_teams(Games.original) == self.pm.get_players_by_teams(Games.cloned))
 
-
-        self.assertTrue()
     # ==================
     # ogni giocatore del gioco nuovo ha un feed fatto delle stesse chiamate alle action a quello del gioco vecchio, possono differire i timestamp degli eventi (del feed sono da considerare solo gli eventi con type='action')
     # le leaderboard generate contengono degli zeri per i giocatori che non hanno fatto action

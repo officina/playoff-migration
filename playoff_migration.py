@@ -37,28 +37,46 @@ class PlayoffMigration(object):
     def __str__(self):
         return f'playoff={self._original}' + f'playoff={self._cloned}'
 
+    # TODO : is there a way to make this private?
+    def pagination_iterations(self, number):
+        number_of_iteration = int(number / 100)
+
+        if number % 100 > 0:
+            number_of_iteration += 1
+
+        return number_of_iteration
+
     def get_game_id(self, game: Games) -> str:
         if game == Games.original:
             return self._original.get('/admin')["game"]["id"]
         elif game == Games.cloned:
             return self._cloned.get('/admin')["game"]["id"]
 
+    def get_number_teams(self, game: Games):
+        if game == Games.original:
+            return self._original.get('/admin/teams', {})['total']
+        elif game == Games.cloned:
+            return self._cloned.get('/admin/teams', {})['total']
+
     # TODO : check if not sorting dict is a problem
-    # TODO : check the max number of team returned on each api call
     def get_teams_by_id(self, game: Games):
         teams = {}
-        if game == Games.original:
-            teams = self._original.get('/admin/teams', {})
-        elif game == Games.cloned:
-            teams = self._cloned.get('/admin/teams', {})
         teams_id = {}
-        count = 0
-        for item in teams['data']:
-            teams_id.update({'id' + str(count): item['id']})
-            count += 1
+        count_key = 0
+
+        for count in range(self.pagination_iterations(self.get_number_teams(game))):
+            if game == Games.original:
+                teams = self._original.get('/admin/teams', {"skip": str(count * 100), "limit": "100"})
+            elif game == Games.cloned:
+                teams = self._cloned.get('/admin/teams', {"skip": str(count * 100), "limit": "100"})
+
+            for item in teams['data']:
+                teams_id.update({count_key: item['id']})
+                count_key += 1
+
         return teams_id
 
-    def get_numbers_players(self, game: Games):
+    def get_number_players(self, game: Games):
         if game == Games.original:
             return self._original.get('/admin/players', {})['total']
         elif game == Games.cloned:
@@ -66,16 +84,11 @@ class PlayoffMigration(object):
 
     # TODO : check if not sorting dict is a problem
     def get_players_by_id(self, game: Games):
-        number_of_players = self.get_numbers_players(game)
-        number_of_iteration = int(number_of_players / 100)
-
-        if number_of_players % 100 > 0:
-            number_of_iteration += 1
-
         players_id = {}
         count_key = 0
         players = {}
-        for count in range(number_of_iteration):
+
+        for count in range(self.pagination_iterations(self.get_number_players(game))):
             if game == Games.original:
                 players = self._original.get('/admin/players', {"skip": str(count * 100), "limit": "100"})
             elif game == Games.cloned:
@@ -87,27 +100,36 @@ class PlayoffMigration(object):
 
         return players_id
 
+    def get_number_players_in_team(self, game: Games, team_key):
+        if game == Games.original:
+            return self._original.get('/admin/teams/' + team_key + '/members', {})['total']
+        elif game == Games.cloned:
+            return self._cloned.get('/admin/teams/' + team_key + '/members', {})['total']
+
     def get_players_by_teams(self, game: Games):
         teams_by_id = self.get_teams_by_id(game)
         players_by_teams = {}
 
         for key in teams_by_id:
             players_in_team = {}
+            count_key = 0
 
-            if game == Games.original:
-                players_in_team = self._original.get('/admin/teams/:' + teams_by_id.get(key) + '/members', {})
-            elif game == Games.cloned:
-                players_in_team = self._cloned.get('/admin/teams/:' + teams_by_id.get(key) + '/members', {})
+            for count in range(self.pagination_iterations(self.get_number_players_in_team(game, teams_by_id.get(key)))):
+                if game == Games.original:
+                    players_in_team = self._original.get('/admin/teams/' + teams_by_id.get(key) + '/members',
+                                                         {"skip": str(count * 100), "limit": "100"})
+                elif game == Games.cloned:
+                    players_in_team = self._cloned.get('/admin/teams/' + teams_by_id.get(key) + '/members',
+                                                       {"skip": str(count * 100), "limit": "100"})
 
-            count = 0
-            pl_team = {}
-            for item in players_in_team['data']:
-                pl_team.update({count: item['id']})
-                count += 1
+                pl_team = {}
+                for item in players_in_team['data']:
+                    pl_team.update({count_key: item['id']})
+                    count_key += 1
 
-            players_by_teams.update({teams_by_id.get(key): pl_team})
+                players_by_teams.update({teams_by_id.get(key): pl_team})
 
-        pprint()
+        return players_by_teams
 
 
 
@@ -117,5 +139,5 @@ quindi solo se eseguo "python playoff_migration.py"
 """
 if __name__ == '__main__':
     p = PlayoffMigration()
-    p.get_players_by_id(Games.original)
+    pprint(p.get_players_by_teams(Games.original))
 
