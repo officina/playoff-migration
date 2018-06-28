@@ -5,14 +5,15 @@ from pprint import pprint
 from enum import Enum
 
 
-
 class Games(Enum):
+    """ Enumeration type that identifies each different game """
     original = "original"
     cloned = "cloned"
 
 
 class PlayoffMigration(object):
-
+    """ this class implements all the necessary methods and attributes to clone a game and scope its assetts in a
+    second one """
     _original: Playoff = None
     _cloned: Playoff = None
 
@@ -37,34 +38,43 @@ class PlayoffMigration(object):
     def __str__(self):
         return f'playoff={self._original}' + f'playoff={self._cloned}'
 
+    # ++++++++++++++++++++++++
+    # UTILITIES
+
     # TODO : is there a way to make this private?
-    def pagination_iterations(self, number):
-        number_of_iteration = int(number / 100)
+    def get_number_pages(self, number):
+        """ Returns the number of pages needed for pagination """
+        n_pages = int(number / 100)
 
         if number % 100 > 0:
-            number_of_iteration += 1
+            n_pages += 1
 
-        return number_of_iteration
+        return n_pages
+
+    # ++++++++++++++++++++++++
+    # INFORMATION RETRIEVERS
 
     def get_game_id(self, game: Games) -> str:
+        """ Returns game id of the chosen game """
         if game == Games.original:
             return self._original.get('/admin')["game"]["id"]
         elif game == Games.cloned:
             return self._cloned.get('/admin')["game"]["id"]
 
     def get_number_teams(self, game: Games):
+        """ Returns the number of teams of the chosen game """
         if game == Games.original:
             return self._original.get('/admin/teams', {})['total']
         elif game == Games.cloned:
             return self._cloned.get('/admin/teams', {})['total']
 
-    # TODO : check if not sorting dict is a problem
     def get_teams_by_id(self, game: Games):
+        """ Returns all the teams ids  """
         teams = {}
         teams_id = {}
         count_key = 0
 
-        for count in range(self.pagination_iterations(self.get_number_teams(game))):
+        for count in range(self.get_number_pages(self.get_number_teams(game))):
             if game == Games.original:
                 teams = self._original.get('/admin/teams', {"skip": str(count * 100), "limit": "100"})
             elif game == Games.cloned:
@@ -77,18 +87,19 @@ class PlayoffMigration(object):
         return teams_id
 
     def get_number_players(self, game: Games):
+        """ Returns the number of players in the chosen game """
         if game == Games.original:
             return self._original.get('/admin/players', {})['total']
         elif game == Games.cloned:
             return self._cloned.get('/admin/players', {})['total']
 
-    # TODO : check if not sorting dict is a problem
     def get_players_by_id(self, game: Games):
+        """ Returns all the ids of the player in the chosen game """
         players_id = {}
         count_key = 0
         players = {}
 
-        for count in range(self.pagination_iterations(self.get_number_players(game))):
+        for count in range(self.get_number_pages(self.get_number_players(game))):
             if game == Games.original:
                 players = self._original.get('/admin/players', {"skip": str(count * 100), "limit": "100"})
             elif game == Games.cloned:
@@ -101,12 +112,14 @@ class PlayoffMigration(object):
         return players_id
 
     def get_number_players_in_team(self, game: Games, team_key):
+        """ Returns the number of players in the chosen game """
         if game == Games.original:
             return self._original.get('/admin/teams/' + team_key + '/members', {})['total']
         elif game == Games.cloned:
             return self._cloned.get('/admin/teams/' + team_key + '/members', {})['total']
 
     def get_players_by_teams(self, game: Games):
+        """ Returns all the players grouped by each team of the selected game """
         teams_by_id = self.get_teams_by_id(game)
         players_by_teams = {}
 
@@ -114,7 +127,7 @@ class PlayoffMigration(object):
             players_in_team = {}
             count_key = 0
 
-            for count in range(self.pagination_iterations(self.get_number_players_in_team(game, teams_by_id.get(key)))):
+            for count in range(self.get_number_pages(self.get_number_players_in_team(game, teams_by_id.get(key)))):
                 if game == Games.original:
                     players_in_team = self._original.get('/admin/teams/' + teams_by_id.get(key) + '/members',
                                                          {"skip": str(count * 100), "limit": "100"})
