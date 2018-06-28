@@ -30,20 +30,19 @@ class PlayoffMigrationTest(unittest.TestCase):
 
     # il gioco nuovo contiene i team del gioco vecchio
     def test_cloned_game_contains_all_teams_from_original_game(self):
-        self.assertTrue(self.pm.get_teams(Games.original) == self.pm.get_teams(Games.cloned))
+        self.assertTrue(self.pm.get_teams_by_id(Games.original) == self.pm.get_teams_by_id(Games.cloned))
 
+    # il gioco nuovo contiene tutti gli utenti del gioco vecchio
+    def test_cloned_game_contains_all_players_from_original_game(self):
+        self.assertTrue(self.pm.get_players_by_id(Games.original) == self.pm.get_players_by_id(Games.cloned))
 
-#=======
-    def test_gamelab_clone1_contains_all_players_from_gamelab_original(self):
-        # il gioco nuovo contiene tutti gli utenti del gioco vecchio
-        player_equals = self.pm.check_all_players()
-        self.assertTrue(player_equals)
-
+    # i giocatori del gioco nuovo sono associati agli stessi team del gioco vecchio
     def test_gamelab_clone1_team_players_match_team_players_gamelab_original(self):
-        # i giocatori del gioco nuovo sono associati agli stessi team del gioco vecchio
-        team_players = self.pm.team_players_match()
-        self.assertTrue(team_players)
+        self.test_cloned_game_contains_all_teams_from_original_game()
 
+
+        self.assertTrue()
+    # ==================
     # ogni giocatore del gioco nuovo ha un feed fatto delle stesse chiamate alle action a quello del gioco vecchio, possono differire i timestamp degli eventi (del feed sono da considerare solo gli eventi con type='action')
     # le leaderboard generate contengono degli zeri per i giocatori che non hanno fatto action
     # esiste un gioco su playoff clone di id gamelab_target che si chiama gamelab_clone2

@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from pprint import pprint
 from enum import Enum
-import sys
+
 
 
 class Games(Enum):
@@ -44,7 +44,8 @@ class PlayoffMigration(object):
             return self._cloned.get('/admin')["game"]["id"]
 
     # TODO : check if not sorting dict is a problem
-    def get_teams(self, game: Games):
+    # TODO : check the max number of team returned on each api call
+    def get_teams_by_id(self, game: Games):
         teams = {}
         if game == Games.original:
             teams = self._original.get('/admin/teams', {})
@@ -60,37 +61,55 @@ class PlayoffMigration(object):
     def get_numbers_players(self, game: Games):
         if game == Games.original:
             return self._original.get('/admin/players', {})['total']
-        if game == Games.cloned:
+        elif game == Games.cloned:
             return self._cloned.get('/admin/players', {})['total']
 
     # TODO : check if not sorting dict is a problem
-    def get_players(self, game: Games):
-        number_of_players = str(self.get_numbers_players(game))
-        players = {}
-        if game == Games.original:
-            players = self._original.get('/admin/players', {"limit": "100"})
-        elif game == Games.cloned:
-            players = self._cloned.get('/admin/players', {"limit": "16"})
+    def get_players_by_id(self, game: Games):
+        number_of_players = self.get_numbers_players(game)
+        number_of_iteration = int(number_of_players / 100)
+
+        if number_of_players % 100 > 0:
+            number_of_iteration += 1
+
         players_id = {}
-        count = 0
-        for item in players['data']:
-            players_id.update({count: item['id']})
-            count += 1
-        #return players_id
-        pprint(players)
-        pprint(players_id)
+        count_key = 0
+        players = {}
+        for count in range(number_of_iteration):
+            if game == Games.original:
+                players = self._original.get('/admin/players', {"skip": str(count * 100), "limit": "100"})
+            elif game == Games.cloned:
+                players = self._cloned.get('/admin/players', {"skip": str(count * 100), "limit": "100"})
 
-    def check_all_players(self):
-        response1 = self._original.get('/admin/players', {})
-        response2 = self._cloned.get('/admin/players', {})
-        pprint(response1)
-        pprint(response2)
-        return sorted(response1) == sorted(response2)
+            for item in players['data']:
+                players_id.update({count_key: item['id']})
+                count_key += 1
 
-    def team_players_match(self):
-        teams_game1 = self._original.get('/admin/teams', {})
-        teams_game2 = self._cloned.get('/admin/teams', {})
-        teams_id_game1 = filter(lambda x: x['id'], teams_game1['data'])
+        return players_id
+
+    def get_players_by_teams(self, game: Games):
+        teams_by_id = self.get_teams_by_id(game)
+        players_by_teams = {}
+
+        for key in teams_by_id:
+            players_in_team = {}
+
+            if game == Games.original:
+                players_in_team = self._original.get('/admin/teams/:' + teams_by_id.get(key) + '/members', {})
+            elif game == Games.cloned:
+                players_in_team = self._cloned.get('/admin/teams/:' + teams_by_id.get(key) + '/members', {})
+
+            count = 0
+            pl_team = {}
+            for item in players_in_team['data']:
+                pl_team.update({count: item['id']})
+                count += 1
+
+            players_by_teams.update({teams_by_id.get(key): pl_team})
+
+        pprint()
+
+
 
 """
 il blocco di codice successivo viene eseguito solo se è il modulo principale
@@ -98,4 +117,5 @@ quindi solo se eseguo "python playoff_migration.py"
 """
 if __name__ == '__main__':
     p = PlayoffMigration()
-    p.get_players(Games.original)
+    p.get_players_by_id(Games.original)
+
