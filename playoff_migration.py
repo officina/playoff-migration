@@ -129,8 +129,15 @@ class PlayoffMigration(object):
 
         return players_by_teams
 
-    def get_players_feed(self, game: Games, player_id):  # manca un parametro? (i giocatori?)
-        pass
+    def get_player_feed(self, game: Games, player_id):
+        """ Return feed of the chosen player """
+        player_feed = self.__get_game(game).get("/admin/players/" + player_id + "/activity", {"start": "0"})
+            # list of dict
+
+        if player_feed is None:  # if a player have no feed, GET method return None
+            return []
+
+        return player_feed
 
 
 """
@@ -139,6 +146,10 @@ quindi solo se eseguo "python playoff_migration.py"
 """
 if __name__ == '__main__':
     p = PlayoffMigration()
-    pprint(p.get_game_id(Games.original))
-    pprint(p.get_game_id(Games.cloned))
+    print(p)
+
+
+
+
+
 
