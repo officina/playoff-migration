@@ -67,7 +67,10 @@ class PlayoffMigrationTest(unittest.TestCase):
             for item in player_feed_cloned:
                 del item['timestamp']
 
-            condition = player_feed_original == player_feed_cloned
+            # if condition became False there isn't a reason to go on
+            if not player_feed_original == player_feed_cloned:
+                condition = False
+                break
 
         self.assertTrue(condition)
 
