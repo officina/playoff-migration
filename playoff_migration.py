@@ -139,6 +139,79 @@ class PlayoffMigration(object):
 
         return player_feed
 
+    def get_teams_design(self, game: Games):
+        """ Return teams design of chosen game """
+        return self.__get_game(game).get('/design/versions/latest/teams', {})
+
+    def get_single_team_design(self, game: Games, team_id):
+        """ Return design of the chosen team in the chosen game """
+        return self.__get_game(game).get('/design/versions/latest/teams/' + team_id, {})
+
+    def get_team_instance_info(self, game: Games, team_id):
+        """ Return team instance information """
+        return self.__get_game(game).get('/admin/teams/' + team_id, {})
+
+    def delete_teams_design(self, game: Games):
+        """ Delete team designs in chosen game """
+        teams_design = self.get_teams_design(game)
+
+        for team in teams_design:
+            self.__get_game(game).delete('/design/versions/latest/teams/' + team['id'], {})
+
+    def delete_teams_instances(self, game: Games):
+        """ Delete teams instances in chosen game """
+        teams_instance = self.get_teams_by_id(game)
+
+        for team in teams_instance:
+            self.__get_game(game).delete('/admin/teams/' + teams_instance.get(team), {})
+
+    # ++++++++++++++++++++++++
+    # MIGRATION METHOD
+
+    def migrate_teams_design(self):
+        """ Migrate teams design from original game to the cloned one """
+        self.delete_teams_design(Games.cloned)  # remove designed team if the exists
+        teams_design = self.get_teams_design(Games.original)
+
+        for team in teams_design:
+            single_team_design = self.get_single_team_design(Games.original, team['id'])
+
+            # json parameter for post request
+            cloned_single_team_design = {
+                "name": single_team_design['name'],
+                'id': single_team_design['id'],
+                'permissions': single_team_design['permissions'],
+                'creator_roles': single_team_design['creator_roles'],
+                'settings': single_team_design['settings'],
+                '_hues': single_team_design['_hues']
+            }
+
+            self.__get_game(Games.cloned).post('/design/versions/latest/teams', {}, cloned_single_team_design)
+
+    def migrate_teams_instance(self):
+        """ Migrate teams instances from original game to the cloned one """
+        self.delete_teams_instances(Games.cloned)
+        teams_by_id = self.get_teams_by_id(Games.original)
+
+        for team in teams_by_id:
+            team_instance_info = self.get_team_instance_info(Games.original, teams_by_id.get(team))
+
+            cloned_team_instance_info = {
+                'id': team_instance_info['id'],
+                'name': team_instance_info['name'],
+                'access': team_instance_info['access'],
+                'definition': team_instance_info['definition']['id']
+            }
+
+            self.__get_game(Games.cloned).post('/admin/teams', {}, cloned_team_instance_info)
+
+    def migrate_teams(self):
+        self.migrate_teams_design()
+        self.migrate_teams_instance()
+
+    # ++++++++++++++++++++++++
+    # TEST METHOD
+
 
 """
 il blocco di codice successivo viene eseguito solo se è il modulo principale
@@ -148,8 +221,6 @@ if __name__ == '__main__':
     p = PlayoffMigration()
     print(p)
 
-
-
-
+    p.migrate_teams_instance()
 
 

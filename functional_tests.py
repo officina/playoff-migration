@@ -30,6 +30,7 @@ class PlayoffMigrationTest(unittest.TestCase):
 
     def test_cloned_game_contains_all_teams_from_original_game(self):
         """ il gioco nuovo contiene i team del gioco vecchio """
+        self.pm.migrate_teams()
         self.assertTrue(self.pm.get_teams_by_id(Games.original) == self.pm.get_teams_by_id(Games.cloned))
 
     def test_cloned_game_contains_all_players_from_original_game(self):
