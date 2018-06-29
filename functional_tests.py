@@ -42,7 +42,8 @@ class PlayoffMigrationTest(unittest.TestCase):
         self.assertTrue(self.pm.get_players_by_teams(Games.original) == self.pm.get_players_by_teams(Games.cloned))
 
     # ==================
-    # ogni giocatore del gioco nuovo ha un feed fatto delle stesse chiamate alle action a quello del gioco vecchio, possono differire i timestamp degli eventi (del feed sono da considerare solo gli eventi con type='action')
+    # ogni giocatore del gioco nuovo ha un feed fatto delle stesse chiamate alle action a quello del gioco vecchio,
+        # possono differire i timestamp degli eventi (del feed sono da considerare solo gli eventi con type='action')
     # le leaderboard generate contengono degli zeri per i giocatori che non hanno fatto action
     # esiste un gioco su playoff clone di id gamelab_target che si chiama gamelab_clone2
     # il gioco nuovo contiene i team del gioco vecchio
