@@ -221,6 +221,4 @@ if __name__ == '__main__':
     p = PlayoffMigration()
     print(p)
 
-    p.migrate_teams_instance()
-
 
