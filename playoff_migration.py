@@ -171,55 +171,6 @@ class PlayoffMigration(object):
         for team in teams_instance:
             self.__get_game(game).delete('/admin/teams/' + teams_instance.get(team), {})
 
-    # ++++++++++++++++++++++++
-    # MIGRATION METHOD
-
-    def __migrate_teams_design(self):
-        """ Migrate teams design from original game to the cloned one """
-        self.delete_teams_design(Games.cloned)  # remove designed team if the exists
-        teams_design = self.get_teams_design(Games.original)
-
-        for team in teams_design:
-            single_team_design = self.get_single_team_design(Games.original, team['id'])
-
-            # TODO : verifie if is necessary
-            # json parameter for post request
-            cloned_single_team_design = {
-                'name': single_team_design['name'],
-                'id': single_team_design['id'],
-                'permissions': single_team_design['permissions'],
-                'creator_roles': single_team_design['creator_roles'],
-                'settings': single_team_design['settings'],
-                '_hues': single_team_design['_hues']
-            }
-
-            self.__get_game(Games.cloned).post('/design/versions/latest/teams', {}, cloned_single_team_design)
-
-    def __migrate_teams_instance(self):
-        """ Migrate teams instances from original game to the cloned one """
-        self.delete_teams_instances(Games.cloned)
-        teams_by_id = self.get_teams_by_id(Games.original)
-
-        for team in teams_by_id:
-            team_instance_info = self.get_team_instance_info(Games.original, teams_by_id.get(team))
-
-            # TODO : check if is necessary
-            cloned_team_instance_info = {
-                'id': team_instance_info['id'],
-                'name': team_instance_info['name'],
-                'access': team_instance_info['access'],
-                'definition': team_instance_info['definition']['id']
-            }
-
-            self.__get_game(Games.cloned).post('/admin/teams', {}, cloned_team_instance_info)
-
-    def migrate_teams(self):
-        self.__migrate_teams_design()
-        self.__migrate_teams_instance()
-
-    # ++++++++++++++++++++++++
-    # TEST METHOD
-
     def get_game_leaderboards_list(self, game: Games):
         """Returns the leaderboards of the selected game"""
         leaderboards_name = []
@@ -269,6 +220,74 @@ class PlayoffMigration(object):
 
         return(players_zero_def)
 
+    # ++++++++++++++++++++++++
+    # MIGRATION METHOD
+
+    def __migrate_teams_design(self):
+        """ Migrate teams design from original game to the cloned one """
+        self.delete_teams_design(Games.cloned)  # remove designed team if the exists
+        teams_design = self.get_teams_design(Games.original)
+
+        for team in teams_design:
+            single_team_design = self.get_single_team_design(Games.original, team['id'])
+
+            # TODO : verifie if is necessary
+            # json parameter for post request
+            cloned_single_team_design = {
+                'name': single_team_design['name'],
+                'id': single_team_design['id'],
+                'permissions': single_team_design['permissions'],
+                'creator_roles': single_team_design['creator_roles'],
+                'settings': single_team_design['settings'],
+                '_hues': single_team_design['_hues']
+            }
+
+            self.__get_game(Games.cloned).post('/design/versions/latest/teams', {}, cloned_single_team_design)
+
+    def __migrate_teams_instance(self):
+        """ Migrate teams instances from original game to the cloned one """
+        self.delete_teams_instances(Games.cloned)
+        teams_by_id = self.get_teams_by_id(Games.original)
+
+        for team in teams_by_id:
+            team_instance_info = self.get_team_instance_info(Games.original, teams_by_id.get(team))
+
+            # TODO : check if is necessary
+            cloned_team_instance_info = {
+                'id': team_instance_info['id'],
+                'name': team_instance_info['name'],
+                'access': team_instance_info['access'],
+                'definition': team_instance_info['definition']['id']
+            }
+
+            self.__get_game(Games.cloned).post('/admin/teams', {}, cloned_team_instance_info)
+
+    def migrate_teams(self):
+        self.__migrate_teams_design()
+        self.__migrate_teams_instance()
+
+    # ++++++++++++++++++++++++
+    # TEST METHOD
+
+    def migrate_players_in_team(self):
+        players_by_id = self.get_players_by_id(Games.original)
+
+        for key in players_by_id:
+            player_id = players_by_id.get(key)
+            player_profile = self.get_player_profile(Games.original, player_id)
+
+            for team in player_profile['teams']:
+                cloned_team_player = {
+                    "requested_roles": {
+                        "member": True
+                    },
+                    "player_id": player_id
+                }
+                self.__get_game(Games.cloned).post("/admin/teams/" + team['id'] + "/join", {}, cloned_team_player)
+
+    def get_player_profile(self, game: Games, player_id):
+        return self.__get_game(game).get("/admin/players/" + player_id, {})
+
 """
 il blocco di codice successivo viene eseguito solo se è il modulo principale
 quindi solo se eseguo "python playoff_migration.py"
@@ -277,4 +296,6 @@ if __name__ == '__main__':
     p = PlayoffMigration()
     pprint(p.get_game_id(Games.original))
     pprint(p.get_game_id(Games.cloned))
+
+    p.migrate_players_in_team()
 
