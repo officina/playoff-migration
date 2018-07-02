@@ -30,6 +30,7 @@ class PlayoffMigrationTest(unittest.TestCase):
 
     def test_cloned_game_contains_all_teams_from_original_game(self):
         """ il gioco nuovo contiene i team del gioco vecchio """
+        self.pm.migrate_teams()
         self.assertTrue(self.pm.get_teams_by_id(Games.original) == self.pm.get_teams_by_id(Games.cloned))
 
     def test_cloned_game_contains_all_players_from_original_game(self):
@@ -46,9 +47,40 @@ class PlayoffMigrationTest(unittest.TestCase):
         self.assertTrue(not self.pm.get_players_with_score_0(Games.cloned))
 
 
+    def test_original_game_player_feed_match_cloned_ones(self):
+        """ ogni giocatore del gioco nuovo ha un feed fatto delle stesse chiamate alle action a quello del gioco
+        vecchio, possono differire i timestamp degli eventi (del feed sono da considerare solo gli eventi
+        con type='action')
+        """
+        self.test_cloned_game_contains_all_players_from_original_game()  # check if both games have same number of player
+
+        players_by_id = self.pm.get_players_by_id(Games.original)  # at this point is not relevant what type of game
+        # I choose form to retrieve players id
+        condition = True
+
+        for key in players_by_id:
+            player_feed_original = self.pm.get_player_feed(Games.original, players_by_id.get(key))
+            player_feed_cloned = self.pm.get_player_feed(Games.cloned, players_by_id.get(key))
+
+            # filter by "event" = "action" (using list because get() method return a list of dict
+            player_feed_original = list(filter(lambda x: x['event'] == 'action', player_feed_original))
+            player_feed_cloned = list(filter(lambda x: x['event'] == 'action', player_feed_cloned))
+
+            # remove timestamp because not important
+            for item in player_feed_original:
+                del item['timestamp']
+
+            for item in player_feed_cloned:
+                del item['timestamp']
+
+            # if condition became False there isn't a reason to go on
+            if not player_feed_original == player_feed_cloned:
+                condition = False
+                break
+
+        self.assertTrue(condition)
+
     # ==================
-    # ogni giocatore del gioco nuovo ha un feed fatto delle stesse chiamate alle action a quello del gioco vecchio,
-        # possono differire i timestamp degli eventi (del feed sono da considerare solo gli eventi con type='action')
     # le leaderboard generate contengono degli zeri per i giocatori che non hanno fatto action
     # esiste un gioco su playoff clone di id gamelab_target che si chiama gamelab_clone2
     # il gioco nuovo contiene i team del gioco vecchio

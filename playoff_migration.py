@@ -129,8 +129,88 @@ class PlayoffMigration(object):
 
         return players_by_teams
 
-    def get_players_feed(self, game: Games, player_id):  # manca un parametro? (i giocatori?)
-        pass
+    def get_player_feed(self, game: Games, player_id):
+        """ Return feed of the chosen player """
+        player_feed = self.__get_game(game).get("/admin/players/" + player_id + "/activity", {"start": "0"})
+            # list of dict
+
+        if player_feed is None:  # if a player have no feed, GET method return None
+            return []
+
+        return player_feed
+
+    def get_teams_design(self, game: Games):
+        """ Return teams design of chosen game """
+        return self.__get_game(game).get('/design/versions/latest/teams', {})
+
+    def get_single_team_design(self, game: Games, team_id):
+        """ Return design of the chosen team in the chosen game """
+        return self.__get_game(game).get('/design/versions/latest/teams/' + team_id, {})
+
+    def get_team_instance_info(self, game: Games, team_id):
+        """ Return team instance information """
+        return self.__get_game(game).get('/admin/teams/' + team_id, {})
+
+    def delete_teams_design(self, game: Games):
+        """ Delete team designs in chosen game """
+        teams_design = self.get_teams_design(game)
+
+        for team in teams_design:
+            self.__get_game(game).delete('/design/versions/latest/teams/' + team['id'], {})
+
+    def delete_teams_instances(self, game: Games):
+        """ Delete teams instances in chosen game """
+        teams_instance = self.get_teams_by_id(game)
+
+        for team in teams_instance:
+            self.__get_game(game).delete('/admin/teams/' + teams_instance.get(team), {})
+
+    # ++++++++++++++++++++++++
+    # MIGRATION METHOD
+
+    def migrate_teams_design(self):
+        """ Migrate teams design from original game to the cloned one """
+        self.delete_teams_design(Games.cloned)  # remove designed team if the exists
+        teams_design = self.get_teams_design(Games.original)
+
+        for team in teams_design:
+            single_team_design = self.get_single_team_design(Games.original, team['id'])
+
+            # json parameter for post request
+            cloned_single_team_design = {
+                "name": single_team_design['name'],
+                'id': single_team_design['id'],
+                'permissions': single_team_design['permissions'],
+                'creator_roles': single_team_design['creator_roles'],
+                'settings': single_team_design['settings'],
+                '_hues': single_team_design['_hues']
+            }
+
+            self.__get_game(Games.cloned).post('/design/versions/latest/teams', {}, cloned_single_team_design)
+
+    def migrate_teams_instance(self):
+        """ Migrate teams instances from original game to the cloned one """
+        self.delete_teams_instances(Games.cloned)
+        teams_by_id = self.get_teams_by_id(Games.original)
+
+        for team in teams_by_id:
+            team_instance_info = self.get_team_instance_info(Games.original, teams_by_id.get(team))
+
+            cloned_team_instance_info = {
+                'id': team_instance_info['id'],
+                'name': team_instance_info['name'],
+                'access': team_instance_info['access'],
+                'definition': team_instance_info['definition']['id']
+            }
+
+            self.__get_game(Games.cloned).post('/admin/teams', {}, cloned_team_instance_info)
+
+    def migrate_teams(self):
+        self.migrate_teams_design()
+        self.migrate_teams_instance()
+
+    # ++++++++++++++++++++++++
+    # TEST METHOD
 
     def get_game_leaderboards_list(self, game:Games):
         """Returns the leaderboards of the selected game"""
@@ -185,6 +265,6 @@ quindi solo se eseguo "python playoff_migration.py"
 """
 if __name__ == '__main__':
     p = PlayoffMigration()
-    # pprint(p.get_game_id(Games.original))
-    # pprint(p.get_game_id(Games.cloned))
-    pprint(p.get_players_with_score_0(Games.original))
+    pprint(p.get_game_id(Games.original))
+    pprint(p.get_game_id(Games.cloned))
+
