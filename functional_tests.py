@@ -39,13 +39,12 @@ class PlayoffMigrationTest(unittest.TestCase):
 
     def test_original_game_players_by_team_match_cloned_ones(self):
         """ i giocatori del gioco nuovo sono associati agli stessi team del gioco vecchio """
-        self.test_cloned_game_contains_all_teams_from_original_game() # check if both games have same number of teams
+        self.test_cloned_game_contains_all_teams_from_original_game()  # check if both games have same number of teams
         self.assertTrue(self.pm.get_players_by_teams(Games.original) == self.pm.get_players_by_teams(Games.cloned))
 
     def test_leaderboard_has_players_with_score_0(self):
         """ le leaderboard generate contengono degli zeri per i giocatori che non hanno fatto action """
         self.assertTrue(not self.pm.get_players_with_score_0(Games.cloned))
-
 
     def test_original_game_player_feed_match_cloned_ones(self):
         """ ogni giocatore del gioco nuovo ha un feed fatto delle stesse chiamate alle action a quello del gioco
@@ -66,6 +65,7 @@ class PlayoffMigrationTest(unittest.TestCase):
             player_feed_original = list(filter(lambda x: x['event'] == 'action', player_feed_original))
             player_feed_cloned = list(filter(lambda x: x['event'] == 'action', player_feed_cloned))
 
+            # TODO : check if for statement is useful, because we are checking only one feed at a time
             # remove timestamp because not important
             for item in player_feed_original:
                 del item['timestamp']

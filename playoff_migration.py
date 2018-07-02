@@ -82,8 +82,10 @@ class PlayoffMigration(object):
         teams_id = {}
         count_key = 0
         game_instance = self.__get_game(game)
+        number_teams = self.get_number_teams(game)
+        number_pages = PlayoffMigration.__get_number_pages(number_teams)  # pagination management
 
-        for count in range(PlayoffMigration.__get_number_pages(self.get_number_teams(game))):
+        for count in range(number_pages):
             teams = game_instance.get('/admin/teams', {"skip": str(count * 100), "limit": "100"})
 
             for item in teams['data']:
@@ -97,8 +99,10 @@ class PlayoffMigration(object):
         players_id = {}
         count_key = 0
         game_instance = self.__get_game(game)
+        number_players = self.get_number_players(game)
+        number_pages = PlayoffMigration.__get_number_pages(number_players)  # pagination management
 
-        for count in range(PlayoffMigration.__get_number_pages(self.get_number_players(game))):
+        for count in range(number_pages):
             players = game_instance.get('/admin/players', {"skip": str(count * 100), "limit": "100"})
 
             for item in players['data']:
@@ -115,8 +119,10 @@ class PlayoffMigration(object):
         for key in teams_by_id:
             count_key = 0
             game_instance = self.__get_game(game)
+            number_players_in_team = self.get_number_players_in_team(game, teams_by_id.get(key))
+            number_pages = PlayoffMigration.__get_number_pages(number_players_in_team)  # pagination management
 
-            for count in range(PlayoffMigration.__get_number_pages(self.get_number_players_in_team(game, teams_by_id.get(key)))):
+            for count in range(number_pages):
                 players_in_team = game_instance.get('/admin/teams/' + teams_by_id.get(key) + '/members',
                                                     {"skip": str(count * 100), "limit": "100"})
 
@@ -168,7 +174,7 @@ class PlayoffMigration(object):
     # ++++++++++++++++++++++++
     # MIGRATION METHOD
 
-    def migrate_teams_design(self):
+    def __migrate_teams_design(self):
         """ Migrate teams design from original game to the cloned one """
         self.delete_teams_design(Games.cloned)  # remove designed team if the exists
         teams_design = self.get_teams_design(Games.original)
@@ -176,9 +182,10 @@ class PlayoffMigration(object):
         for team in teams_design:
             single_team_design = self.get_single_team_design(Games.original, team['id'])
 
+            # TODO : verifie if is necessary
             # json parameter for post request
             cloned_single_team_design = {
-                "name": single_team_design['name'],
+                'name': single_team_design['name'],
                 'id': single_team_design['id'],
                 'permissions': single_team_design['permissions'],
                 'creator_roles': single_team_design['creator_roles'],
@@ -188,7 +195,7 @@ class PlayoffMigration(object):
 
             self.__get_game(Games.cloned).post('/design/versions/latest/teams', {}, cloned_single_team_design)
 
-    def migrate_teams_instance(self):
+    def __migrate_teams_instance(self):
         """ Migrate teams instances from original game to the cloned one """
         self.delete_teams_instances(Games.cloned)
         teams_by_id = self.get_teams_by_id(Games.original)
@@ -196,6 +203,7 @@ class PlayoffMigration(object):
         for team in teams_by_id:
             team_instance_info = self.get_team_instance_info(Games.original, teams_by_id.get(team))
 
+            # TODO : check if is necessary
             cloned_team_instance_info = {
                 'id': team_instance_info['id'],
                 'name': team_instance_info['name'],
@@ -206,18 +214,20 @@ class PlayoffMigration(object):
             self.__get_game(Games.cloned).post('/admin/teams', {}, cloned_team_instance_info)
 
     def migrate_teams(self):
-        self.migrate_teams_design()
-        self.migrate_teams_instance()
+        self.__migrate_teams_design()
+        self.__migrate_teams_instance()
 
     # ++++++++++++++++++++++++
     # TEST METHOD
 
-    def get_game_leaderboards_list(self, game:Games):
+    def get_game_leaderboards_list(self, game: Games):
         """Returns the leaderboards of the selected game"""
         leaderboards_name = []
-        leaderboards = self.__get_game(game).get('/design/versions/latest/leaderboards',{})
+        leaderboards = self.__get_game(game).get('/design/versions/latest/leaderboards', {})
+
         for item in leaderboards:
             leaderboards_name.append(item['id'])
+
         return leaderboards_name
 
     def get_leaderboard_scope(self, game: Games, leaderboard):
