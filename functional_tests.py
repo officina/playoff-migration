@@ -20,6 +20,9 @@ class PlayoffMigrationTest(unittest.TestCase):
         # self.browser.quit()
         pass
 
+    # +++++++++++++
+    # IMPLEMENTATI
+
     def test_exists_original_game(self):
         """ esiste un gioco su playoff con id GameLabNoTargetV01 """
         self.assertTrue(self.pm.get_game_id(Games.original) == "GameLabNoTargetV01")
@@ -33,6 +36,9 @@ class PlayoffMigrationTest(unittest.TestCase):
         self.pm.migrate_teams()
         self.assertTrue(self.pm.get_teams_by_id(Games.original) == self.pm.get_teams_by_id(Games.cloned))
 
+    # +++++++++++++
+    # NON IMPLEMENTATI
+
     def test_cloned_game_contains_all_players_from_original_game(self):
         """ il gioco nuovo contiene tutti gli utenti del gioco vecchio """
         self.assertTrue(self.pm.get_players_by_id(Games.original) == self.pm.get_players_by_id(Games.cloned))
@@ -41,10 +47,6 @@ class PlayoffMigrationTest(unittest.TestCase):
         """ i giocatori del gioco nuovo sono associati agli stessi team del gioco vecchio """
         self.test_cloned_game_contains_all_teams_from_original_game()  # check if both games have same number of teams
         self.assertTrue(self.pm.get_players_by_teams(Games.original) == self.pm.get_players_by_teams(Games.cloned))
-
-    def test_leaderboard_has_players_with_score_0(self):
-        """ le leaderboard generate contengono degli zeri per i giocatori che non hanno fatto action """
-        self.assertTrue(not self.pm.get_players_with_score_0(Games.cloned))
 
     def test_original_game_player_feed_match_cloned_ones(self):
         """ ogni giocatore del gioco nuovo ha un feed fatto delle stesse chiamate alle action a quello del gioco
@@ -79,6 +81,10 @@ class PlayoffMigrationTest(unittest.TestCase):
                 break
 
         self.assertTrue(condition)
+
+    def test_leaderboard_has_players_with_score_0(self):
+        """ le leaderboard generate contengono degli zeri per i giocatori che non hanno fatto action """
+        self.assertTrue(not self.pm.get_players_with_score_0(Games.cloned))
 
     # ==================
     # le leaderboard generate contengono degli zeri per i giocatori che non hanno fatto action
