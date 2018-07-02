@@ -132,6 +132,52 @@ class PlayoffMigration(object):
     def get_players_feed(self, game: Games, player_id):  # manca un parametro? (i giocatori?)
         pass
 
+    def get_game_leaderboards_list(self, game:Games):
+        """Returns the leaderboards of the selected game"""
+        leaderboards_name = []
+        leaderboards = self.__get_game(game).get('/design/versions/latest/leaderboards',{})
+        for item in leaderboards:
+            leaderboards_name.append(item['id'])
+        return leaderboards_name
+
+    def get_leaderboard_scope(self, game: Games, leaderboard):
+        return self.__get_game(game).get('/design/versions/latest/leaderboards/'+ leaderboard, { "player_id" : "atomasse"})['scope']
+
+    def get_leaderboards_players(self, game:Games):
+        """ Returns a dict containing every player for each team of the selected game """
+        boards = self.get_game_leaderboards_list(game)
+        leaderboards_content = {}
+
+        for item in boards:
+            if self.get_leaderboard_scope(game, item)['type'] == 'team_instance':
+                scope_type = self.get_leaderboard_scope(game, item)['id']
+                board_content = self.__get_game(game).get('/runtime/leaderboards/' + str(item),{"cycle" : "alltime", "team_instance_id"
+                                                                              : scope_type ,  "player_id" : "atomasse", "limit" : str(10**12)})
+
+                leaderboards_content.update({item : board_content})
+
+            else:
+                leaderboards_content.update({item: self.__get_game(game).get('/runtime/leaderboards/' + str(item),
+                                                                             {"cycle": "alltime", "player_id": "atomasse",
+                                                                              "limit": str(10**12)})})
+        return leaderboards_content
+
+    def get_players_with_score_0(self, game:Games):
+        """ returns a list containing all the id of the players who have a 0 score in a leaderboard """
+        players_zero = []
+        leaderboards_players = self.get_leaderboards_players(game)
+
+        for k, v in leaderboards_players.items():
+            for player in v['data']:
+                if player['score'] == '0':
+                    players_zero.append(player['player']['id'])
+
+        players_zero_def = []
+        for item in players_zero: #removal of the duplicates
+            if item not in players_zero_def:
+                players_zero_def.append(item)
+
+        return(players_zero_def)
 
 """
 il blocco di codice successivo viene eseguito solo se è il modulo principale
@@ -139,6 +185,6 @@ quindi solo se eseguo "python playoff_migration.py"
 """
 if __name__ == '__main__':
     p = PlayoffMigration()
-    pprint(p.get_game_id(Games.original))
-    pprint(p.get_game_id(Games.cloned))
-
+    # pprint(p.get_game_id(Games.original))
+    # pprint(p.get_game_id(Games.cloned))
+    pprint(p.get_players_with_score_0(Games.original))
