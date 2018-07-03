@@ -171,8 +171,18 @@ class PlayoffMigration(object):
         for team in teams_instance:
             self.__get_game(game).delete('/admin/teams/' + teams_instance.get(team), {})
 
+    def get_player_profile(self, game: Games, player_id):
+        """ Returns the profile data of the selected player """
+        return self.__get_game(game).get("/admin/players/" + player_id, {})
+
+    def delete_player_instaces(self, game: Games):
+        """ Deletes all the player instances from the selected game"""
+        players_instance = self.get_players_by_id(game)
+        for player in players_instance:
+            self.__get_game(game).delete('/admin/players/' + players_instance.get(player), {})
+
     # ++++++++++++++++++++++++
-    # MIGRATION METHOD
+    # MIGRATION METHODS
 
     def __migrate_teams_design(self):
         """ Migrate teams design from original game to the cloned one """
@@ -213,9 +223,24 @@ class PlayoffMigration(object):
 
             self.__get_game(Games.cloned).post('/admin/teams', {}, cloned_team_instance_info)
 
-    def migrate_teams(self):
+    def migrate_teams(self, game: Games):
         self.__migrate_teams_design()
         self.__migrate_teams_instance()
+
+    def migrate_players(self):
+        """ Migrates the player instances from the original game to the cloned one """
+        self.delete_player_instaces(Games.cloned)
+        players_by_id = self.get_players_by_id(Games.original)
+
+        for player in players_by_id:
+            player_instance_info = self.get_player_profile(Games.original, players_by_id.get(player))
+
+            cloned_player_instance_info = {
+                'id': str(player_instance_info['id']),
+                'alias': str(player_instance_info['alias'])}
+
+            self.__get_game(Games.cloned).post('/admin/players', {}, cloned_player_instance_info )
+
 
     # ++++++++++++++++++++++++
     # TEST METHOD
@@ -277,4 +302,3 @@ if __name__ == '__main__':
     p = PlayoffMigration()
     pprint(p.get_game_id(Games.original))
     pprint(p.get_game_id(Games.original))
-
