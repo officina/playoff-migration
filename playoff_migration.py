@@ -12,7 +12,7 @@ class Games(Enum):
 
 
 class PlayoffMigration(object):
-    """ this class implements all the necessary methods and attributes to clone a game and scope its assetts in a
+    """ This class implements all the necessary methods and attributes to clone a game and scope its assetts in a
     second one """
     _original: Playoff = None
     _cloned: Playoff = None
@@ -298,108 +298,8 @@ class PlayoffMigration(object):
 
             self.__get_game(Games.cloned).post('/admin/players', {}, cloned_player_instance_info)
 
-    # ++++++++++++++++++++++++
-    # TEST METHOD
-
-    def get_game_leaderboards_list(self, game: Games):
-        """Returns the leaderboards of the selected game"""
-        leaderboards_name = []
-        leaderboards = self.__get_game(game).get('/design/versions/latest/leaderboards', {})
-
-        for item in leaderboards:
-            leaderboards_name.append(item['id'])
-
-        return leaderboards_name
-
-    def get_leaderboard_scope(self, game: Games, leaderboard):
-        return self.__get_game(game).get('/design/versions/latest/leaderboards/'+ leaderboard, { "player_id" : "atomasse"})['scope']
-
-    def get_leaderboards_players(self, game:Games):
-        """ Returns a dict containing every player for each team of the selected game """
-        boards = self.get_game_leaderboards_list(game)
-        leaderboards_content = {}
-
-        for item in boards:
-            if self.get_leaderboard_scope(game, item)['type'] == 'team_instance':
-                scope_type = self.get_leaderboard_scope(game, item)['id']
-                board_content = self.__get_game(game).get('/runtime/leaderboards/' + str(item),{"cycle" : "alltime", "team_instance_id"
-                                                                              : scope_type ,  "player_id" : "atomasse", "limit" : str(10**12)})
-
-                leaderboards_content.update({item : board_content})
-
-            else:
-                leaderboards_content.update({item: self.__get_game(game).get('/runtime/leaderboards/' + str(item),
-                                                                             {"cycle": "alltime", "player_id": "atomasse",
-                                                                              "limit": str(10**12)})})
-        return leaderboards_content
-
-    def get_players_with_score_0(self, game:Games):
-        """ returns a list containing all the id of the players who have a 0 score in a leaderboard """
-        players_zero = []
-        leaderboards_players = self.get_leaderboards_players(game)
-
-        for k, v in leaderboards_players.items():
-            for player in v['data']:
-                if player['score'] == '0':
-                    players_zero.append(player['player']['id'])
-
-        players_zero_def = []
-        for item in players_zero: #removal of the duplicates
-            if item not in players_zero_def:
-                players_zero_def.append(item)
-
-        return(players_zero_def)
-
-    # ++++++++++++++++++++++++
-    # MIGRATION METHOD
-
-    def __migrate_teams_design(self):
-        """ Migrate teams design from original game to the cloned one """
-        self.delete_teams_design(Games.cloned)  # remove designed team if the exists
-        teams_design = self.get_teams_design(Games.original)
-
-        for team in teams_design:
-            single_team_design = self.get_single_team_design(Games.original, team['id'])
-
-            # TODO : verifie if is necessary
-            # json parameter for post request
-            cloned_single_team_design = {
-                'name': single_team_design['name'],
-                'id': single_team_design['id'],
-                'permissions': single_team_design['permissions'],
-                'creator_roles': single_team_design['creator_roles'],
-                'settings': single_team_design['settings'],
-                '_hues': single_team_design['_hues']
-            }
-
-            self.__get_game(Games.cloned).post('/design/versions/latest/teams', {}, cloned_single_team_design)
-
-    def __migrate_teams_instance(self):
-        """ Migrate teams instances from original game to the cloned one """
-        self.delete_teams_instances(Games.cloned)
-        teams_by_id = self.get_teams_by_id(Games.original)
-
-        for team in teams_by_id:
-            team_instance_info = self.get_team_instance_info(Games.original, teams_by_id.get(team))
-
-            # TODO : check if is necessary
-            cloned_team_instance_info = {
-                'id': team_instance_info['id'],
-                'name': team_instance_info['name'],
-                'access': team_instance_info['access'],
-                'definition': team_instance_info['definition']['id']
-            }
-
-            self.__get_game(Games.cloned).post('/admin/teams', {}, cloned_team_instance_info)
-
-    def migrate_teams(self):
-        self.__migrate_teams_design()
-        self.__migrate_teams_instance()
-
-    # ++++++++++++++++++++++++
-    # TEST METHOD
-
     def migrate_players_in_team(self):
+        """ Migrates players from team in original game to the cloned one """
         players_by_id = self.get_players_by_id(Games.original)
 
         for key in players_by_id:
@@ -409,14 +309,11 @@ class PlayoffMigration(object):
             for team in player_profile['teams']:
                 cloned_team_player = {
                     "requested_roles": {
-                        "member": True
+                        team['roles'][0]: True
                     },
                     "player_id": player_id
                 }
                 self.__get_game(Games.cloned).post("/admin/teams/" + team['id'] + "/join", {}, cloned_team_player)
-
-    def get_player_profile(self, game: Games, player_id):
-        return self.__get_game(game).get("/admin/players/" + player_id, {})
 
 """
 il blocco di codice successivo viene eseguito solo se è il modulo principale
@@ -426,4 +323,6 @@ if __name__ == '__main__':
     p = PlayoffMigration()
     pprint(p.get_game_id(Games.original))
     pprint(p.get_game_id(Games.cloned))
+
+
 

@@ -42,13 +42,14 @@ class PlayoffMigrationTest(unittest.TestCase):
         self.pm.migrate_players()
         self.assertTrue(self.pm.get_players_by_id(Games.original) == self.pm.get_players_by_id(Games.cloned))
 
-    # +++++++++++++
-    # NON IMPLEMENTATI
-
     def test_original_game_players_by_team_match_cloned_ones(self):
         """ i giocatori del gioco nuovo sono associati agli stessi team del gioco vecchio """
         self.test_cloned_game_contains_all_teams_from_original_game()  # check if both games have same number of teams
+        self.pm.migrate_players_in_team()
         self.assertTrue(self.pm.get_players_by_teams(Games.original) == self.pm.get_players_by_teams(Games.cloned))
+
+    # +++++++++++++
+    # NON IMPLEMENTATI
 
     def test_original_game_player_feed_match_cloned_ones(self):
         """ ogni giocatore del gioco nuovo ha un feed fatto delle stesse chiamate alle action a quello del gioco
