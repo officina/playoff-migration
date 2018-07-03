@@ -220,40 +220,48 @@ class PlayoffMigration(object):
     # ++++++++++++++++++++++++
     # TEST METHOD
 
-    def get_game_leaderboards_list(self, game: Games):
-        """Returns the leaderboards of the selected game"""
-        leaderboards_name = []
+    def get_leaderboards_by_id(self, game: Games):
+        """ Returns leaderboards by id of the selected game """
+        leaderboards_id = []
         leaderboards = self.__get_game(game).get('/design/versions/latest/leaderboards', {})
 
         for item in leaderboards:
-            leaderboards_name.append(item['id'])
+            leaderboards_id.append(item['id'])
 
-        return leaderboards_name
+        return leaderboards_id
 
     def get_leaderboard_scope(self, game: Games, leaderboard):
-        return self.__get_game(game).get('/design/versions/latest/leaderboards/'+ leaderboard, { "player_id" : "atomasse"})['scope']
+        """ Return scope of chosen leaderboard in the chosen game """
+        return self.__get_game(game).get('/design/versions/latest/leaderboards/' + leaderboard, {})['scope']
 
-    def get_leaderboards_players(self, game:Games):
-        """ Returns a dict containing every player for each team of the selected game """
-        boards = self.get_game_leaderboards_list(game)
+    # TODO : find a way to not use fixed "player_id"
+    def get_leaderboards_players(self, game: Games):
+        """ Returns every player and his score, for each leaderboard of the chosen game """
+        leaderboards_by_id = self.get_leaderboards_by_id(game)
         leaderboards_content = {}
 
-        for item in boards:
-            if self.get_leaderboard_scope(game, item)['type'] == 'team_instance':
-                scope_type = self.get_leaderboard_scope(game, item)['id']
-                board_content = self.__get_game(game).get('/runtime/leaderboards/' + str(item),{"cycle" : "alltime", "team_instance_id"
-                                                                              : scope_type ,  "player_id" : "atomasse", "limit" : str(10**12)})
-
-                leaderboards_content.update({item : board_content})
+        for item in leaderboards_by_id:
+            leaderboards_scope = self.get_leaderboard_scope(game, item)
+            if leaderboards_scope['type'] == 'team_instance':
+                scope_type = leaderboards_scope['id']
+                board_content = self.__get_game(game).get('/runtime/leaderboards/'
+                                                          + item, {"cycle": "alltime",
+                                                                   "team_instance_id": scope_type,
+                                                                   "player_id": "atomasse",
+                                                                   "limit": str(10**12)})
+                leaderboards_content.update({item: board_content})
 
             else:
-                leaderboards_content.update({item: self.__get_game(game).get('/runtime/leaderboards/' + str(item),
-                                                                             {"cycle": "alltime", "player_id": "atomasse",
-                                                                              "limit": str(10**12)})})
+                board_content = self.__get_game(game).get('/runtime/leaderboards/'
+                                                          + item, {"cycle": "alltime",
+                                                                   "player_id": "atomasse",
+                                                                   "limit": str(10**12)})
+                leaderboards_content.update({item: board_content})
+
         return leaderboards_content
 
-    def get_players_with_score_0(self, game:Games):
-        """ returns a list containing all the id of the players who have a 0 score in a leaderboard """
+    def get_players_with_score_0(self, game: Games):
+        """ Return a list containing all the id of the players who have a 0 score in a leaderboard """
         players_zero = []
         leaderboards_players = self.get_leaderboards_players(game)
 
@@ -263,11 +271,11 @@ class PlayoffMigration(object):
                     players_zero.append(player['player']['id'])
 
         players_zero_def = []
-        for item in players_zero: #removal of the duplicates
+        for item in players_zero:  # removal of the duplicates
             if item not in players_zero_def:
                 players_zero_def.append(item)
 
-        return(players_zero_def)
+        return players_zero_def
 
 """
 il blocco di codice successivo viene eseguito solo se è il modulo principale
