@@ -98,7 +98,6 @@ class PlayoffMigrationTest(unittest.TestCase):
     # ogni giocatore del gioco nuovo ha un feed fatto delle stesse chiamate alle action a quello del gioco vecchio, possono differire i timestamp degli eventi (del feed sono da considerare solo gli eventi con type='action')
     # le leaderboard generate contengono degli zeri per i giocatori che non hanno fatto action
 
-
 """
 il blocco di codice successivo viene eseguito solo se è il modulo principale
 quindi solo se eseguo "python playoff_migration.py"
