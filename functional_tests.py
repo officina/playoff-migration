@@ -8,7 +8,7 @@ from playoff_migration import Games
 
 
 class PlayoffMigrationTest(unittest.TestCase):
-      
+
     pm: PlayoffMigration
 
     def setUp(self):

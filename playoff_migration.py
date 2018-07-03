@@ -232,7 +232,7 @@ class PlayoffMigration(object):
         for team in teams_instance:
             self.__get_game(game).delete('/admin/teams/' + teams_instance.get(team), {})
 
-    def delete_player_instaces(self, game: Games):
+    def delete_player_instances(self, game: Games):
         """ Deletes all the player instances from the selected game"""
         players_instance = self.get_players_by_id(game)
         for player in players_instance:
@@ -286,7 +286,7 @@ class PlayoffMigration(object):
 
     def migrate_players(self):
         """ Migrates the player instances from the original game to the cloned one """
-        self.delete_player_instaces(Games.cloned)
+        self.delete_player_instances(Games.cloned)
         players_by_id = self.get_players_by_id(Games.original)
 
         for player in players_by_id:
