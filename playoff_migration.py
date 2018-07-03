@@ -157,29 +157,9 @@ class PlayoffMigration(object):
         """ Return team instance information """
         return self.__get_game(game).get('/admin/teams/' + team_id, {})
 
-    def delete_teams_design(self, game: Games):
-        """ Delete team designs in chosen game """
-        teams_design = self.get_teams_design(game)
-
-        for team in teams_design:
-            self.__get_game(game).delete('/design/versions/latest/teams/' + team['id'], {})
-
-    def delete_teams_instances(self, game: Games):
-        """ Delete teams instances in chosen game """
-        teams_instance = self.get_teams_by_id(game)
-
-        for team in teams_instance:
-            self.__get_game(game).delete('/admin/teams/' + teams_instance.get(team), {})
-
     def get_player_profile(self, game: Games, player_id):
         """ Returns the profile data of the selected player """
         return self.__get_game(game).get("/admin/players/" + player_id, {})
-
-    def delete_player_instaces(self, game: Games):
-        """ Deletes all the player instances from the selected game"""
-        players_instance = self.get_players_by_id(game)
-        for player in players_instance:
-            self.__get_game(game).delete('/admin/players/' + players_instance.get(player), {})
 
     def get_leaderboards_by_id(self, game: Games):
         """ Returns leaderboards by id of the selected game """
@@ -197,46 +177,66 @@ class PlayoffMigration(object):
 
     # TODO : find a way to not use fixed "player_id"
     def get_leaderboards_players(self, game: Games):
-        """ Returns every player and his score, for each leaderboard of the chosen game """
-        leaderboards_by_id = self.get_leaderboards_by_id(game)
-        leaderboards_content = {}
+            """ Returns every player and his score, for each leaderboard of the chosen game """
+            leaderboards_by_id = self.get_leaderboards_by_id(game)
+            leaderboards_content = {}
 
-        for item in leaderboards_by_id:
-            leaderboards_scope = self.get_leaderboard_scope(game, item)
-            if leaderboards_scope['type'] == 'team_instance':
-                scope_type = leaderboards_scope['id']
-                board_content = self.__get_game(game).get('/runtime/leaderboards/'
-                                                          + item, {"cycle": "alltime",
-                                                                   "team_instance_id": scope_type,
-                                                                   "player_id": "atomasse",
-                                                                   "limit": str(10**12)})
-                leaderboards_content.update({item: board_content})
+            for item in leaderboards_by_id:
+                leaderboards_scope = self.get_leaderboard_scope(game, item)
+                if leaderboards_scope['type'] == 'team_instance':
+                    scope_type = leaderboards_scope['id']
+                    board_content = self.__get_game(game).get('/runtime/leaderboards/'
+                                                              + item, {"cycle": "alltime",
+                                                                       "team_instance_id": scope_type,
+                                                                       "player_id": "atomasse",
+                                                                       "limit": str(10 ** 12)})
+                    leaderboards_content.update({item: board_content})
 
-            else:
-                board_content = self.__get_game(game).get('/runtime/leaderboards/'
-                                                          + item, {"cycle": "alltime",
-                                                                   "player_id": "atomasse",
-                                                                   "limit": str(10**12)})
-                leaderboards_content.update({item: board_content})
+                else:
+                    board_content = self.__get_game(game).get('/runtime/leaderboards/'
+                                                              + item, {"cycle": "alltime",
+                                                                       "player_id": "atomasse",
+                                                                       "limit": str(10 ** 12)})
+                    leaderboards_content.update({item: board_content})
 
-        return leaderboards_content
+            return leaderboards_content
 
     def get_players_with_score_0(self, game: Games):
-        """ Return a list containing all the id of the players who have a 0 score in a leaderboard """
-        players_zero = []
-        leaderboards_players = self.get_leaderboards_players(game)
+            """ Return a list containing all the id of the players who have a 0 score in a leaderboard """
+            players_zero = []
+            leaderboards_players = self.get_leaderboards_players(game)
 
-        for k, v in leaderboards_players.items():
-            for player in v['data']:
-                if player['score'] == '0':
-                    players_zero.append(player['player']['id'])
+            for k, v in leaderboards_players.items():
+                for player in v['data']:
+                    if player['score'] == '0':
+                        players_zero.append(player['player']['id'])
 
-        players_zero_def = []
-        for item in players_zero:  # removal of the duplicates
-            if item not in players_zero_def:
-                players_zero_def.append(item)
+            players_zero_def = []
+            for item in players_zero:  # removal of the duplicates
+                if item not in players_zero_def:
+                    players_zero_def.append(item)
 
-        return players_zero_def
+            return players_zero_def
+
+    def delete_teams_design(self, game: Games):
+        """ Delete team designs in chosen game """
+        teams_design = self.get_teams_design(game)
+
+        for team in teams_design:
+            self.__get_game(game).delete('/design/versions/latest/teams/' + team['id'], {})
+
+    def delete_teams_instances(self, game: Games):
+        """ Delete teams instances in chosen game """
+        teams_instance = self.get_teams_by_id(game)
+
+        for team in teams_instance:
+            self.__get_game(game).delete('/admin/teams/' + teams_instance.get(team), {})
+
+    def delete_player_instaces(self, game: Games):
+        """ Deletes all the player instances from the selected game"""
+        players_instance = self.get_players_by_id(game)
+        for player in players_instance:
+            self.__get_game(game).delete('/admin/players/' + players_instance.get(player), {})
 
     # ++++++++++++++++++++++++
     # MIGRATION METHODS
@@ -296,8 +296,7 @@ class PlayoffMigration(object):
                 'id': str(player_instance_info['id']),
                 'alias': str(player_instance_info['alias'])}
 
-            self.__get_game(Games.cloned).post('/admin/players', {}, cloned_player_instance_info )
-
+            self.__get_game(Games.cloned).post('/admin/players', {}, cloned_player_instance_info)
 
     # ++++++++++++++++++++++++
     # TEST METHOD
