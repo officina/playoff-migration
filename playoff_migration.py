@@ -284,5 +284,5 @@ quindi solo se eseguo "python playoff_migration.py"
 if __name__ == '__main__':
     p = PlayoffMigration()
     pprint(p.get_game_id(Games.original))
-    pprint(p.get_game_id(Games.cloned))
+    pprint(p.get_game_id(Games.original))
 
