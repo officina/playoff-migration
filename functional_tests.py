@@ -137,26 +137,21 @@ class PlayoffMigrationTest(unittest.TestCase):
                 break
 
         self.assertTrue(condition)
+        """ le leaderboard generate contengono degli zeri per i giocatori che non hanno fatto action """
+        self.assertTrue(not self.pm.get_players_with_score_0(Games.cloned))
 
     # ++++++++++++++++
     # NON IMPLEMENTATI
-
-    def test_leaderboard_has_players_with_score_0(self):
-        """ le leaderboard generate contengono degli zeri per i giocatori che non hanno fatto action """
-        # TODO : check functionality with Gamed.cloned argument (player_id issue)
-        self.assertTrue(not self.pm.get_players_with_score_0(Games.original))
 
     # ==================
     # esiste un gioco su playoff clone di id gamelab_target che si chiama gamelab_clone2
     # il gioco nuovo contiene i team del gioco vecchio
     # il gioco nuovo contiene tutti gli utenti del gioco vecchio
     # i giocatori del gioco nuovo sono associati agli stessi team del gioco vecchi
-    # ogni giocatore del gioco nuovo ha un feed fatto delle stesse chiamate alle action a quello del gioco vecchio, possono differire i timestamp degli eventi (del feed sono da considerare solo gli eventi con type='action')
+    # ogni giocatore del gioco nuovo ha un feed fatto delle stesse chiamate alle action a quello del gioco vecchio,
+        # possono differire i timestamp degli eventi (del feed sono da considerare solo gli eventi con type='action')
     # le leaderboard generate contengono degli zeri per i giocatori che non hanno fatto action
 
-"""
-il blocco di codice successivo viene eseguito solo se è il modulo principale
-quindi solo se eseguo "python playoff_migration.py"
-"""
+
 if __name__ == '__main__':
     unittest.main(warnings='ignore')

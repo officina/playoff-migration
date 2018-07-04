@@ -136,9 +136,8 @@ class PlayoffMigration(object):
         return players_by_teams
 
     def get_player_feed(self, game: Games, player_id):
-        """ Return feed of the chosen player """
+        """ Return a list containing feed of the chosen player """
         player_feed = self.__get_game(game).get("/admin/players/" + player_id + "/activity", {"start": "0"})
-            # list of dict
 
         if player_feed is None:  # if a player have no feed, GET method return None
             return []
@@ -225,6 +224,13 @@ class PlayoffMigration(object):
                     players_zero_def.append(item)
 
             return players_zero_def
+
+    def get_single_leaderboard_design(self, game: Games, leaderboard_id):
+        """ Returns a single design of the chosen leaderboard in the chosen game """
+        return self.__get_game(game).get("/design/versions/latest/leaderboards/" + leaderboard_id, {})
+
+    # +++++++++++++++++++
+    # INFORMATION ERASERS
 
     def delete_teams_design(self, game: Games):
         """ Delete team designs in chosen game """
@@ -367,6 +373,23 @@ class PlayoffMigration(object):
                                                        {"player_id": player_id}, {"variables": variables,
                                                                                   "scopes": scopes})
 
+    def __migrate_leaderboards_design(self):
+        self.delete_leaderboards_design(Games.cloned)
+        leaderboards_id = p.get_leaderboards_by_id(Games.original)
+
+        for id_lead in leaderboards_id:
+            single_design_lead = p.get_single_leaderboard_design(Games.original, id_lead)
+
+            boards_single_design_info = {
+                "id": single_design_lead['id'],
+                "name": single_design_lead['name'],
+                "entity_type": single_design_lead['entity_type'],
+                "scope": single_design_lead['scope'],
+                "metric": single_design_lead['metric']
+            }
+
+            self.__get_game(Games.cloned).post("/design/versions/latest/leaderboards", {}, boards_single_design_info)
+
     def migrate(self):
         self.__migrate_teams_design()
         self.__migrate_teams_instances()
@@ -374,12 +397,11 @@ class PlayoffMigration(object):
         self.__migrate_players_in_team()
         self.__migrate_action_design()
         self.__migrate_players_feed()
+        self.__migrate_leaderboards_design()
 
     # +++++++++++++++
     # TEST METHODS
 
-    def migrate_leaderboards_design(self):
-        pass
 
 """
 il blocco di codice successivo viene eseguito solo se è il modulo principale
@@ -387,14 +409,4 @@ quindi solo se eseguo "python playoff_migration.py"
 """
 if __name__ == '__main__':
     p = PlayoffMigration()
-    pprint(p.get_game_id(Games.original))
-    pprint(p.get_game_id(Games.cloned))
-
-
-
-
-
-
-
-
-
+    print(p)
