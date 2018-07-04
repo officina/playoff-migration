@@ -395,12 +395,45 @@ class PlayoffMigration(object):
         self.__migrate_teams_instances()
         self.__migrate_players()
         self.__migrate_players_in_team()
+        self.migrate_metrics_design()
         self.__migrate_action_design()
         self.__migrate_players_feed()
         self.__migrate_leaderboards_design()
 
     # +++++++++++++++
     # TEST METHODS
+
+    def get_metrics_design_id(self, game: Games):
+        """ Returns metrics design id """
+        return self.__get_game(game).get("/design/versions/latest/metrics", {})
+
+    def get_single_metric_design(self, game: Games, metric_id):
+        """ Returns design of the chosen metric """
+        return self.__get_game(game).get("/design/versions/latest/metrics/" + metric_id, {})
+
+    def delete_metrics_design(self, game: Games):
+        """ Deletes metrics design in the chosen game"""
+        metrics_design_id = self.get_metrics_design_id(game)
+
+        for item in metrics_design_id:
+            self.__get_game(game).delete("/design/versions/latest/metrics/" + item['id'], {})
+
+    def migrate_metrics_design(self):
+        """ Migrates metrics design from original game to the cloned one """
+        self.delete_metrics_design(Games.cloned)
+        metrics_design_id = self.get_metrics_design_id(Games.original)
+
+        for item in metrics_design_id:
+            single_metric_degign = self.get_single_metric_design(Games.original, item['id'])
+
+            input_metric_design = {
+                "id": single_metric_degign['id'],
+                "name": single_metric_degign['name'],
+                "type": single_metric_degign['type'],
+                "constraints": single_metric_degign['constraints']
+            }
+
+            self.__get_game(Games.cloned).post("/design/versions/latest/metrics", {}, input_metric_design)
 
 
 """
@@ -410,3 +443,13 @@ quindi solo se eseguo "python playoff_migration.py"
 if __name__ == '__main__':
     p = PlayoffMigration()
     print(p)
+
+    #p.delete_teams_instances(Games.cloned)
+    #p.delete_teams_design(Games.cloned)
+    #p.delete_player_instances(Games.cloned)
+    #p.delete_actions_design(Games.cloned)
+    p.delete_leaderboards_design(Games.cloned)
+    #p.delete_metrics_design(Games.cloned)
+
+    print("Finished!")
+
