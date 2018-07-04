@@ -28,8 +28,8 @@ class PlayoffMigration(object):
             allow_unsecure=True
         )
         self._cloned = Playoff(
-            client_id=os.environ["GAMELABCLONSCOPED_CLIENT_ID"],
-            client_secret=os.environ["GAMELABCLONSCOPED_CLIENT_SECRET"],
+            client_id=os.environ["GAMELABCLONSCOPED3_CLIENT_ID"],
+            client_secret=os.environ["GAMELABCLONSCOPED3_CLIENT_SECRET"],
             type='client',
             allow_unsecure=True
         )
@@ -286,7 +286,6 @@ class PlayoffMigration(object):
 
     def __migrate_teams_design(self):
         """ Migrate teams design from original game to the cloned one """
-        self.delete_teams_design(Games.cloned)  # remove designed team if the exists
         teams_design = self.get_teams_design(Games.original)
 
         for team in teams_design:
@@ -305,7 +304,7 @@ class PlayoffMigration(object):
 
             self.__get_game(Games.cloned).post('/design/versions/latest/teams', {}, cloned_single_team_design)
 
-    def __migrate_teams_instances(self):
+    def migrate_teams_instances(self):
         """ Migrate teams instances from original game to the cloned one """
         self.delete_teams_instances(Games.cloned)
         teams_by_id = self.get_teams_by_id(Games.original)
@@ -323,7 +322,7 @@ class PlayoffMigration(object):
 
             self.__get_game(Games.cloned).post('/admin/teams', {}, cloned_team_instance_info)
 
-    def __migrate_players(self):
+    def migrate_players(self):
         """ Migrates the player instances from the original game to the cloned one """
         self.delete_player_instances(Games.cloned)
         players_by_id = self.get_players_by_id(Games.original)
@@ -337,7 +336,7 @@ class PlayoffMigration(object):
 
             self.__get_game(Games.cloned).post('/admin/players', {}, cloned_player_instance_info)
 
-    def __migrate_players_in_team(self):
+    def migrate_players_in_team(self):
         """ Migrates players from team in original game to the cloned one """
         players_by_id = self.get_players_by_id(Games.original)
 
@@ -354,8 +353,24 @@ class PlayoffMigration(object):
                 }
                 self.__get_game(Games.cloned).post("/admin/teams/" + team['id'] + "/join", {}, cloned_team_player)
 
+    def __migrate_metrics_design(self):
+        """ Migrates metrics design from original game to the cloned one """
+        metrics_design_id = self.get_metrics_design_id(Games.original)
+
+        for item in metrics_design_id:
+            single_metric_degign = self.get_single_metric_design(Games.original, item['id'])
+
+            input_metric_design = {
+                "id": single_metric_degign['id'],
+                "name": single_metric_degign['name'],
+                "type": single_metric_degign['type'],
+                "constraints": single_metric_degign['constraints']
+            }
+
+            self.__get_game(Games.cloned).post("/design/versions/latest/metrics", {}, input_metric_design)
+
     def __migrate_action_design(self):
-        self.delete_actions_design(Games.cloned)
+        """ Migrates actions design from original game to the cloned one """
         actions_design = self.get_actions_design(Games.original)
 
         for action in actions_design:
@@ -371,7 +386,7 @@ class PlayoffMigration(object):
 
             self.__get_game(Games.cloned).post("/design/versions/latest/actions", {}, single_action_info)
 
-    def __migrate_players_feed(self):
+    def migrate_players_feed(self):
         """ Migrates players feed from original game to cloned one """
         players_id = self.get_players_by_id(Games.original)
 
@@ -389,7 +404,6 @@ class PlayoffMigration(object):
                                                                                   "scopes": scopes})
 
     def __migrate_leaderboards_design(self):
-        self.delete_leaderboards_design(Games.cloned)
         leaderboards_id = p.get_leaderboards_by_id(Games.original)
 
         for id_lead in leaderboards_id:
@@ -404,33 +418,6 @@ class PlayoffMigration(object):
             }
 
             self.__get_game(Games.cloned).post("/design/versions/latest/leaderboards", {}, boards_single_design_info)
-
-    def __migrate_metrics_design(self):
-        """ Migrates metrics design from original game to the cloned one """
-        self.delete_metrics_design(Games.cloned)
-        metrics_design_id = self.get_metrics_design_id(Games.original)
-
-        for item in metrics_design_id:
-            single_metric_degign = self.get_single_metric_design(Games.original, item['id'])
-
-            input_metric_design = {
-                "id": single_metric_degign['id'],
-                "name": single_metric_degign['name'],
-                "type": single_metric_degign['type'],
-                "constraints": single_metric_degign['constraints']
-            }
-
-            self.__get_game(Games.cloned).post("/design/versions/latest/metrics", {}, input_metric_design)
-
-    def migrate(self):
-        self.__migrate_teams_design()
-        self.__migrate_teams_instances()
-        self.__migrate_players()
-        self.__migrate_players_in_team()
-        self.__migrate_metrics_design()
-        self.__migrate_action_design()
-        self.__migrate_players_feed()
-        self.__migrate_leaderboards_design()
 
     # +++++++++++++++
     # TEST METHODS
