@@ -404,10 +404,10 @@ class PlayoffMigration(object):
                                                                                   "scopes": scopes})
 
     def __migrate_leaderboards_design(self):
-        leaderboards_id = p.get_leaderboards_by_id(Games.original)
+        leaderboards_id = self.get_leaderboards_by_id(Games.original)
 
         for id_lead in leaderboards_id:
-            single_design_lead = p.get_single_leaderboard_design(Games.original, id_lead)
+            single_design_lead = self.get_single_leaderboard_design(Games.original, id_lead)
 
             boards_single_design_info = {
                 "id": single_design_lead['id'],
