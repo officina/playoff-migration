@@ -4,6 +4,9 @@ import json
 
 
 class ExportPlayoff(object):
+    """ This class purpose is to retrieve data from Playoff game (via PlayoffMigration class) and store it in json
+    file
+    """
 
     pm: PlayoffMigration()
     file_path: str
@@ -13,6 +16,7 @@ class ExportPlayoff(object):
         self.pm = PlayoffMigration()
 
     def export_teams_design(self):
+        """ Create json file from """
         with open(self.file_path + "teamsDesign.json", "w+") as file:
             cloned_teams_design = {}
             teams_design = self.pm.get_teams_design(Games.original)
