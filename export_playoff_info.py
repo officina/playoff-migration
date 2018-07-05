@@ -194,7 +194,7 @@ class ExportPlayoff(object):
 
 
 if __name__ == '__main__':
-    ep = ExportPlayoff("C:\\Users\\MisterWeeMan\\Desktop\\PlayoffData\\")
+    ep = ExportPlayoff("C:\\Users\\Loren\\Desktop\\PlayoffData\\")
     ep.export_game()
 
 
