@@ -281,6 +281,14 @@ class PlayoffMigration(object):
         for item in metrics_design_id:
             self.__get_game(game).delete("/design/versions/latest/metrics/" + item['id'], {})
 
+    def delete_all_info(self, game: Games):
+        self.delete_leaderboards_design(game)
+        self.delete_actions_design(game)
+        self.delete_metrics_design(game)
+        self.delete_player_instances(game)
+        self.delete_teams_instances(game)
+        self.delete_teams_design(game)
+
     # ++++++++++++++++++++++++
     # MIGRATION METHODS
 
@@ -306,7 +314,6 @@ class PlayoffMigration(object):
 
     def migrate_teams_instances(self):
         """ Migrate teams instances from original game to the cloned one """
-        self.delete_teams_instances(Games.cloned)
         teams_by_id = self.get_teams_by_id(Games.original)
 
         for team in teams_by_id:
@@ -324,7 +331,6 @@ class PlayoffMigration(object):
 
     def migrate_players(self):
         """ Migrates the player instances from the original game to the cloned one """
-        self.delete_player_instances(Games.cloned)
         players_by_id = self.get_players_by_id(Games.original)
 
         for player in players_by_id:

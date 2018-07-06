@@ -130,6 +130,14 @@ class PlayoffCreation(object):
         for player in players_instance:
             self.target.delete('/admin/players/' + players_instance.get(player), {})
 
+    def delete_all_info(self):
+        self.delete_leaderboards_design()
+        self.delete_actions_design()
+        self.delete_metrics_design()
+        self.delete_player_instances()
+        self.delete_teams_instances()
+        self.delete_teams_design()
+
     @staticmethod
     def __get_number_pages(number):
         """ Returns the number of pages needed for pagination """
