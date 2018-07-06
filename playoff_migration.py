@@ -14,6 +14,7 @@ class Games(Enum):
 class PlayoffMigration(object):
     """ This class implements all the necessary methods and attributes to clone a game and scope its assetts in a
     second one """
+
     _original: Playoff = None
     _cloned: Playoff = None
 
@@ -364,13 +365,13 @@ class PlayoffMigration(object):
         metrics_design_id = self.get_metrics_design_id(Games.original)
 
         for item in metrics_design_id:
-            single_metric_degign = self.get_single_metric_design(Games.original, item['id'])
+            single_metric_design = self.get_single_metric_design(Games.original, item['id'])
 
             input_metric_design = {
-                "id": single_metric_degign['id'],
-                "name": single_metric_degign['name'],
-                "type": single_metric_degign['type'],
-                "constraints": single_metric_degign['constraints']
+                "id": single_metric_design['id'],
+                "name": single_metric_design['name'],
+                "type": single_metric_design['type'],
+                "constraints": single_metric_design['constraints']
             }
 
             self.__get_game(Games.cloned).post("/design/versions/latest/metrics", {}, input_metric_design)
@@ -425,13 +426,7 @@ class PlayoffMigration(object):
 
             self.__get_game(Games.cloned).post("/design/versions/latest/leaderboards", {}, boards_single_design_info)
 
-    # +++++++++++++++
-    # TEST METHODS
 
-"""
-il blocco di codice successivo viene eseguito solo se è il modulo principale
-quindi solo se eseguo "python playoff_migration.py"
-"""
 if __name__ == '__main__':
     p = PlayoffMigration()
     print(p)
