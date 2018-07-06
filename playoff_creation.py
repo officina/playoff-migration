@@ -89,6 +89,25 @@ class PlayoffCreation(object):
         for key, value in players.items():
             self.target.post('/admin/players', {}, value)
 
+    def import_players_in_team(self):
+        with open(self.file_path + "playersInTeam.json", "r") as file:
+            players_team = json.load(file)
+
+        for key, value in players_team.items():
+            self.target.post("/admin/teams/" + key + "/join", {}, value)
+
+    def import_metric_design(self):
+        pass
+
+    def import_action_design(self):
+        pass
+
+    def import_players_feed(self):
+        pass
+
+    def import_leaderboard_design(self):
+        pass
+
     def delete_teams_design(self):
         """ Delete team designs in chosen game """
         teams_design = self.get_teams_design()
