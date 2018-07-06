@@ -64,8 +64,6 @@ class PlayoffCreation(object):
     # OK METHOD
 
     def import_teams_design(self):
-        self.delete_teams_design()
-
         with open(self.file_path + "teamsDesign.json", "r") as file:
             teams_design = json.load(file)
 
@@ -73,8 +71,6 @@ class PlayoffCreation(object):
             self.target.post("/design/versions/latest/teams", {}, value)
 
     def import_teams_instance(self):
-        self.delete_teams_instances()
-
         with open(self.file_path + "teamsInstances.json", "r") as file:
             teams_instance = json.load(file)
 
@@ -82,8 +78,6 @@ class PlayoffCreation(object):
             self.target.post("/admin/teams", {}, value)
 
     def import_players(self):
-        self.delete_player_instances()
-
         with open(self.file_path + "players.json", "r") as file:
             players = json.load(file)
 
