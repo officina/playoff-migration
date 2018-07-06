@@ -40,6 +40,10 @@ class PlayoffCreation(object):
         """ Returns metrics design id """
         return self.target.get("/design/versions/latest/metrics", {})
 
+    def get_single_leaderboard_design(self):
+        """ Returns a single design of the chosen leaderboard in the chosen game """
+        return self.target.get("/design/versions/latest/leaderboards/" + leaderboard_id, {})
+
     def delete_actions_design(self):
         """ Delete actions design in chosen game """
         actions_design = self.get_actions_design(target)
@@ -92,16 +96,44 @@ class PlayoffCreation(object):
             self.target.post("/admin/teams/" + key + "/join", {}, value)
 
     def import_metric_design(self):
-
+        pass
 
     def import_action_design(self):
         pass
 
     def import_players_feed(self):
-        pass
+        with open(self.file_path + "playersFeed.json", "r") as file:
+            players_feed = json.load(file)
+
+        for player_id, value players_feed:
+            player_feed = value
+
+            for item in player_feed:
+                if item['event'] == 'action':
+                    action_id = item['action']['id']
+                    variables = item['action']['vars']
+                    scopes = item['scopes']
+
+                    self.target.post("/runtime/actions/" + action_id + "/play",
+                                                       {"player_id": player_id}, {"variables": variables,
+                                                                                  "scopes": scopes})
 
     def import_leaderboard_design(self):
-        pass
+        with open(self.file_path + "leaderboardsDesign.json", "r") as file:
+            leaderboards_design = json.load(file)
+
+        for key, value in leaderboards_design:
+            single_design_lead = value
+
+            boards_single_design_info = {
+                "id": single_design_lead['id'],
+                "name": single_design_lead['name'],
+                "entity_type": single_design_lead['entity_type'],
+                "scope": single_design_lead['scope'],
+                "metric": single_design_lead['metric']
+            }
+
+            self.target.post("/design/versions/latest/leaderboards", {}, boards_single_design_info)
 
     def delete_teams_design(self):
         """ Delete team designs in chosen game """
@@ -187,6 +219,6 @@ class PlayoffCreation(object):
 
 if __name__ == '__main__':
     pc = PlayoffCreation()
-    pass
+    pc.import_players_feed()
 
 
