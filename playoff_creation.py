@@ -9,8 +9,7 @@ class PlayoffCreation(object):
 
     file_path: str
 
-    def __init__(self, file_path):
-        self.file_path = file_path
+    def __init__(self):
         from pathlib import Path  # python3 only
         env_path = Path('.') / '.env'
         load_dotenv(dotenv_path=env_path)
@@ -20,6 +19,8 @@ class PlayoffCreation(object):
             type='client',
             allow_unsecure=True
         )
+        # TODO: test this statement
+        self.file_path=os.environ["FOLDER_PATH"]
 
     def get_leaderboards_by_id(self):
         """ Returns leaderboards by id of the selected game """
@@ -97,7 +98,7 @@ class PlayoffCreation(object):
             self.target.post("/admin/teams/" + key + "/join", {}, value)
 
     def import_metric_design(self):
-        pass
+
 
     def import_action_design(self):
         pass
@@ -182,33 +183,8 @@ class PlayoffCreation(object):
 
         return players_id
 
-    # def import_player_instances(self):
-    #     with open(self.file_path + "teamsInstances.json", "r") as file:
-    #         teams_instances = json.load(file)
-    #         for key, value in teams_instances.items():
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 if __name__ == '__main__':
-    pc = PlayoffCreation("C:\\Users\\Loren\\Desktop\\PlayoffData\\")
-    # pc.import_teams_design()
-    pc.import_teams_design()
+    pc = PlayoffCreation()
+    pass
 
 
