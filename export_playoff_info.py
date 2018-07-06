@@ -1,6 +1,8 @@
 from playoff_migration import PlayoffMigration
 from playoff_migration import Games
 import json
+import os
+from dotenv import load_dotenv
 
 
 class ExportPlayoff(object):
@@ -11,9 +13,16 @@ class ExportPlayoff(object):
     pm: PlayoffMigration()
     file_path: str
 
-    def __init__(self, file_path):
-        self.file_path = file_path
+    def __init__(self):
         self.pm = PlayoffMigration()
+        from pathlib import Path  # python3 only
+        env_path = Path('.') / '.env'
+        load_dotenv(dotenv_path=env_path)
+        # TODO: test this statement
+        self.__file_path = os.environ["FOLDER_PATH"]
+
+    def __str__(self):
+        return self.pm.__str__()
 
     def export_teams_design(self):
         """ Create json file containing each team design of the original game"""
@@ -194,5 +203,5 @@ class ExportPlayoff(object):
 
 
 if __name__ == '__main__':
-    ep = ExportPlayoff("C:\\Users\\Loren\\Desktop\\PlayoffData\\")
-    ep.export_game()
+    ep = ExportPlayoff()
+    print(ep)
