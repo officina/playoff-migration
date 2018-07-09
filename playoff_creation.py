@@ -94,6 +94,15 @@ class PlayoffCreation(object):
         for key, value in leaderboards_design.items():
             self.target.post("/design/versions/latest/leaderboards", {}, value)
 
+    def import_all(self):
+        """ Import all data in the game """
+        self.import_teams_design()
+        self.import_teams_instance()
+        self.import_players()
+        self.import_metric_design()
+        self.import_action_design()
+        self.import_leaderboard_design()
+
     # +++++++++++++++++++
     # INFORMATION ERASERS
 
@@ -226,4 +235,5 @@ class PlayoffCreation(object):
 
 if __name__ == '__main__':
     pc = PlayoffCreation()
-    print(pc)
+    pc.delete_all_info()
+    pc.import_all()
