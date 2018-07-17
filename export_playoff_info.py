@@ -191,15 +191,18 @@ class ExportPlayoff(object):
 
             json.dump(cloned_leaderboards_design, file, sort_keys=True, indent=4)
 
-    def export_game(self):
+    def export_design(self):
         self.export_teams_design()
+        self.export_metric_design()
+        self.export_actions_design()
+        self.export_leaderboards_design()
+
+    def export_istances(self):
         self.export_teams_instances()
         self.export_players()
         self.export_players_in_team()
-        self.export_metric_design()
-        self.export_actions_design()
         self.export_players_feed()
-        self.export_leaderboards_design()
+
 
 
 if __name__ == '__main__':
