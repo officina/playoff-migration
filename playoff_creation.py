@@ -104,6 +104,7 @@ class PlayoffCreation(object):
         """ Import all data in the game """
         self.import_teams_instance()
         self.import_players()
+        self.import_players_in_team()
         self.import_players_feed()
 
     # +++++++++++++++++++
