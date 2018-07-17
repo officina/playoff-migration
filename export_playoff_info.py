@@ -11,7 +11,7 @@ class ExportPlayoff(object):
     """
 
     pm: PlayoffMigration()
-    file_path: str
+    __file_path: str
 
     def __init__(self):
         self.pm = PlayoffMigration()
@@ -26,7 +26,7 @@ class ExportPlayoff(object):
 
     def export_teams_design(self):
         """ Create json file containing each team design of the original game"""
-        with open(self.file_path + "teamsDesign.json", "w+") as file:
+        with open(self.__file_path + "teamsDesign.json", "w+") as file:
             cloned_teams_design = {}
             teams_design = self.pm.get_teams_design(Games.original)
 
@@ -50,7 +50,7 @@ class ExportPlayoff(object):
 
     def export_teams_instances(self):
         """ Create json file containing each team instance of the original game"""
-        with open(self.file_path + "teamsInstances.json", "w+") as file:
+        with open(self.__file_path + "teamsInstances.json", "w+") as file:
             cloned_teams_instances = {}
             teams_by_id = self.pm.get_teams_by_id(Games.original)
 
@@ -71,7 +71,7 @@ class ExportPlayoff(object):
 
     def export_players(self):
         """ Create json file containing id and alias of each player of the original game"""
-        with open(self.file_path + "players.json", "w+") as file:
+        with open(self.__file_path + "players.json", "w+") as file:
             cloned_players = {}
             players_by_id = self.pm.get_players_by_id(Games.original)
 
@@ -88,7 +88,7 @@ class ExportPlayoff(object):
 
     def export_players_in_team(self):
         """ Create json file containing the team of each player of the original game"""
-        with open(self.file_path + "playersInTeam.json", "w+") as file:
+        with open(self.__file_path + "playersInTeam.json", "w+") as file:
             cloned_players_in_team = {}
             players_by_id = self.pm.get_players_by_id(Games.original)
 
@@ -111,7 +111,7 @@ class ExportPlayoff(object):
 
     def export_metric_design(self):
         """ Create json file containing each metric design of the original game"""
-        with open(self.file_path + "metricDesign.json", "w+") as file:
+        with open(self.__file_path + "metricDesign.json", "w+") as file:
             cloned_metrics_design = {}
             metrics_design_id = self.pm.get_metrics_design_id(Games.original)
 
@@ -131,7 +131,7 @@ class ExportPlayoff(object):
 
     def export_actions_design(self):
         """ Create json file containing each action design of the original game"""
-        with open(self.file_path + "actionsDesign.json", "w+") as file:
+        with open(self.__file_path + "actionsDesign.json", "w+") as file:
             cloned_actions_design = {}
             actions_design = self.pm.get_actions_design(Games.original)
 
@@ -152,7 +152,7 @@ class ExportPlayoff(object):
 
     def export_players_feed(self):
         """ Create json file containing the activity feed of each player of the original game"""
-        with open(self.file_path + "playersFeed.json", "w+") as file:
+        with open(self.__file_path + "playersFeed.json", "w+") as file:
             cloned_players_feed = {}
             players_id = self.pm.get_players_by_id(Games.original)
 
@@ -172,7 +172,7 @@ class ExportPlayoff(object):
 
     def export_leaderboards_design(self):
         """ Create json file containing each leaderboard design of the original game"""
-        with open(self.file_path + "leaderboardsDesign.json", "w+") as file:
+        with open(self.__file_path + "leaderboardsDesign.json", "w+") as file:
             cloned_leaderboards_design = {}
             leaderboards_id = self.pm.get_leaderboards_by_id(Games.original)
 

@@ -102,6 +102,7 @@ class PlayoffCreation(object):
         self.import_metric_design()
         self.import_action_design()
         self.import_leaderboard_design()
+        self.import_players_feed()
 
     # +++++++++++++++++++
     # INFORMATION ERASERS
