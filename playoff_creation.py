@@ -94,14 +94,16 @@ class PlayoffCreation(object):
         for key, value in leaderboards_design.items():
             self.target.post("/design/versions/latest/leaderboards", {}, value)
 
-    def import_all(self):
-        """ Import all data in the game """
+    def import_all_design(self):
         self.import_teams_design()
-        self.import_teams_instance()
-        self.import_players()
         self.import_metric_design()
         self.import_action_design()
         self.import_leaderboard_design()
+
+    def import_all_istances(self):
+        """ Import all data in the game """
+        self.import_teams_instance()
+        self.import_players()
         self.import_players_feed()
 
     # +++++++++++++++++++
@@ -149,14 +151,17 @@ class PlayoffCreation(object):
         for team in teams_design:
             self.target.delete('/design/versions/latest/teams/' + team['id'], {})
 
-    def delete_all_info(self):
-        """ Delete all info in the game """
+    def delete_all_design(self):
         self.delete_leaderboards_design()
         self.delete_actions_design()
         self.delete_metrics_design()
+        self.delete_teams_design()
+
+    def delete_all_istances(self):
+        """ Delete all info in the game """
         self.delete_player_instances()
         self.delete_teams_instances()
-        self.delete_teams_design()
+
 
     # +++++++++++++++++++++
     # INFORMATION RETRIEVER
@@ -236,5 +241,4 @@ class PlayoffCreation(object):
 
 if __name__ == '__main__':
     pc = PlayoffCreation()
-    pc.delete_all_info()
-    pc.import_all()
+    pprint(pc)
