@@ -15,8 +15,8 @@ class PlayoffCreation(object):
         env_path = Path('.') / '.env'
         load_dotenv(dotenv_path=env_path)
         self.target = Playoff(
-            client_id=os.environ["GAMELAB_GAZZ_STAGING_CLIENT_ID"],
-            client_secret=os.environ["GAMELAB_GAZZ_STAGING_CLIENT_SECRET"],
+            client_id=os.environ["GAMELABCLONSCOPED3_CLIENT_ID"],
+            client_secret=os.environ["GAMELABCLONSCOPED3_CLIENT_SECRET"],
             type='client',
             allow_unsecure=True
         )
@@ -85,8 +85,10 @@ class PlayoffCreation(object):
             players_feed = json.load(file)
 
         for player_id, value in players_feed.items():
-            self.target.post("/runtime/actions/" + value['id'] + "/play",
-                             {"player_id": player_id}, {"variables": value['variables'], "scopes": value['scopes']})
+
+            for feed in value:
+                self.target.post("/runtime/actions/" + feed['id'] + "/play",
+                                 {"player_id": player_id}, {"variables": feed['variables'], "scopes": feed['scopes']})
 
     def import_leaderboard_design(self):
         """ Import leaderboard design from file and post them in the game """
@@ -245,4 +247,6 @@ class PlayoffCreation(object):
 
 if __name__ == '__main__':
     pc = PlayoffCreation()
+    pc.delete_all_istances()
+    pc.import_all_istances()
     print(pc)

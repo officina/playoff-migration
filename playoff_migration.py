@@ -446,6 +446,6 @@ class PlayoffMigration(object):
 
 if __name__ == '__main__':
     p = PlayoffMigration()
-    #p.delete_all_istances(Games.cloned)
+    p.delete_all_istances(Games.cloned)
     #p.migrate_all_istances()
     print(p)

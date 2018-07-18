@@ -172,7 +172,11 @@ class ExportPlayoff(object):
                         player_single_feed.update({"variables": item['action']['vars']})
                         player_single_feed.update({"scopes": item['scopes']})
 
-                        cloned_players_feed.update({player_id: player_single_feed})
+                        if not (player_id in cloned_players_feed.keys()):
+                            cloned_players_feed.update({player_id: []})
+                            cloned_players_feed[player_id].append(player_single_feed)
+                        else:
+                            cloned_players_feed[player_id].append(player_single_feed)
 
             json.dump(cloned_players_feed, file, sort_keys=True, indent=4)
 
@@ -214,4 +218,5 @@ class ExportPlayoff(object):
 
 if __name__ == '__main__':
     ep = ExportPlayoff()
+    ep.export_istances()
     print(ep)
