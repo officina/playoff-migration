@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from pprint import pprint
 from enum import Enum
+import logging
 
 
 class Games(Enum):
@@ -19,6 +20,14 @@ class PlayoffMigration(object):
     _cloned: Playoff = None
 
     def __init__(self):
+        self._logger = logging.getLogger("migration_logger")
+        self._logger.setLevel(logging.DEBUG)
+        ch = logging.FileHandler("datalog.log")
+        ch.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', '%m/%d/%Y %I:%M:%S %p')
+        ch.setFormatter(formatter)
+        self._logger.addHandler(ch)
+
         from pathlib import Path  # python3 only
         env_path = Path('.') / '.env'
         load_dotenv(dotenv_path=env_path)
@@ -80,6 +89,8 @@ class PlayoffMigration(object):
 
     def get_teams_by_id(self, game: Games):
         """ Returns all the teams ids  """
+        self._logger.info(self.get_teams_by_id.__name__ + " called")
+
         teams_id = {}
         count_key = 0
         game_instance = self.__get_game(game)
@@ -97,6 +108,8 @@ class PlayoffMigration(object):
 
     def get_players_by_id(self, game: Games):
         """ Returns all the ids of the player in the chosen game """
+        self._logger.info(self.get_players_by_id.__name__ + " called")
+
         players_id = {}
         count_key = 0
         game_instance = self.__get_game(game)
@@ -114,6 +127,8 @@ class PlayoffMigration(object):
 
     def get_players_by_teams(self, game: Games):
         """ Returns all the players grouped by each team of the selected game """
+        self._logger.info(self.get_players_by_teams.__name__ + " called")
+
         teams_by_id = self.get_teams_by_id(game)
         players_by_teams = {}
 
@@ -138,6 +153,8 @@ class PlayoffMigration(object):
 
     def get_player_feed(self, game: Games, player_id):
         """ Return a list containing feed of the chosen player """
+        self._logger.info(self.get_player_feed.__name__ + " called")
+
         player_feed = self.__get_game(game).get("/admin/players/" + player_id + "/activity", {"start": "0"})
 
         if player_feed is None:  # if a player have no feed, GET method return None
@@ -186,6 +203,8 @@ class PlayoffMigration(object):
     # TODO : find a way to not use fixed "player_id"
     def get_leaderboards_players(self, game: Games):
             """ Returns every player and his score, for each leaderboard of the chosen game """
+            self._logger.info(self.get_leaderboards_players.__name__ + " called")
+
             leaderboards_by_id = self.get_leaderboards_by_id(game)
             leaderboards_content = {}
 
@@ -211,6 +230,8 @@ class PlayoffMigration(object):
 
     def get_players_with_score_0(self, game: Games):
             """ Return a list containing all the id of the players who have a 0 score in a leaderboard """
+            self._logger.info(self.get_players_with_score_0.__name__ + " called")
+
             players_zero = []
             leaderboards_players = self.get_leaderboards_players(game)
 
@@ -243,6 +264,8 @@ class PlayoffMigration(object):
 
     def delete_teams_design(self, game: Games):
         """ Delete team designs in chosen game """
+        self._logger.info(self.delete_teams_design.__name__ + " called")
+
         teams_design = self.get_teams_design(game)
 
         for team in teams_design:
@@ -250,6 +273,8 @@ class PlayoffMigration(object):
 
     def delete_teams_instances(self, game: Games):
         """ Delete teams instances in chosen game """
+        self._logger.info(self.delete_teams_instances.__name__ + " called")
+
         teams_instance = self.get_teams_by_id(game)
 
         for team in teams_instance:
@@ -257,12 +282,16 @@ class PlayoffMigration(object):
 
     def delete_player_instances(self, game: Games):
         """ Deletes all the player instances from the selected game"""
+        self._logger.info(self.delete_player_instances.__name__ + " called")
+
         players_instance = self.get_players_by_id(game)
         for player in players_instance:
             self.__get_game(game).delete('/admin/players/' + players_instance.get(player), {})
 
     def delete_actions_design(self, game: Games):
         """ Delete actions design in chosen game """
+        self._logger.info(self.delete_actions_design.__name__ + " called")
+
         actions_design = self.get_actions_design(game)
 
         for action in actions_design:
@@ -270,6 +299,8 @@ class PlayoffMigration(object):
 
     def delete_leaderboards_design(self, game: Games):
         """ Delete leaderboards design in chosen game """
+        self._logger.info(self.delete_leaderboards_design.__name__ + " called")
+
         leaderboards_design = self.get_leaderboards_by_id(game)
 
         for item in leaderboards_design:
@@ -277,6 +308,8 @@ class PlayoffMigration(object):
 
     def delete_metrics_design(self, game: Games):
         """ Deletes metrics design in the chosen game"""
+        self._logger.info(self.delete_metrics_design.__name__ + " called")
+
         metrics_design_id = self.get_metrics_design_id(game)
 
         for item in metrics_design_id:
@@ -299,6 +332,8 @@ class PlayoffMigration(object):
 
     def migrate_teams_design(self):
         """ Migrate teams design from original game to the cloned one """
+        self._logger.info(self.migrate_teams_design.__name__ + " called")
+
         teams_design = self.get_teams_design(Games.original)
 
         for team in teams_design:
@@ -319,6 +354,8 @@ class PlayoffMigration(object):
 
     def migrate_teams_instances(self):
         """ Migrate teams instances from original game to the cloned one """
+        self._logger.info(self.migrate_teams_instances.__name__ + " called")
+
         teams_by_id = self.get_teams_by_id(Games.original)
 
         for team in teams_by_id:
@@ -336,6 +373,8 @@ class PlayoffMigration(object):
 
     def migrate_players(self):
         """ Migrates the player instances from the original game to the cloned one """
+        self._logger.info(self.migrate_players.__name__ + " called")
+
         players_by_id = self.get_players_by_id(Games.original)
 
         for player in players_by_id:
@@ -349,6 +388,8 @@ class PlayoffMigration(object):
 
     def migrate_players_in_team(self):
         """ Migrates players from team in original game to the cloned one """
+        self._logger.info(self.migrate_players_in_team.__name__ + " called")
+
         players_by_id = self.get_players_by_id(Games.original)
 
         for key in players_by_id:
@@ -366,6 +407,8 @@ class PlayoffMigration(object):
 
     def migrate_metrics_design(self):
         """ Migrates metrics design from original game to the cloned one """
+        self._logger.info(self.migrate_metrics_design.__name__ + " called")
+
         metrics_design_id = self.get_metrics_design_id(Games.original)
 
         for item in metrics_design_id:
@@ -382,6 +425,8 @@ class PlayoffMigration(object):
 
     def migrate_action_design(self):
         """ Migrates actions design from original game to the cloned one """
+        self._logger.info(self.migrate_action_design.__name__ + " called")
+
         actions_design = self.get_actions_design(Games.original)
 
         for action in actions_design:
@@ -399,6 +444,8 @@ class PlayoffMigration(object):
 
     def migrate_players_feed(self):
         """ Migrates players feed from original game to cloned one """
+        self._logger.info(self.migrate_players_feed.__name__ + " called")
+
         players_id = self.get_players_by_id(Games.original)
 
         for key, player_id in players_id.items():
@@ -415,6 +462,9 @@ class PlayoffMigration(object):
                                                                                   "scopes": scopes})
 
     def migrate_leaderboards_design(self):
+        """ Migrates leaderboards design from original game to cloned one """
+        self._logger.info(self.migrate_leaderboards_design.__name__ + " called")
+
         leaderboards_id = self.get_leaderboards_by_id(Games.original)
 
         for id_lead in leaderboards_id:
