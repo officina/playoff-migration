@@ -105,7 +105,13 @@ class ExportPlayoff(object):
                         "player_id": player_id
                     }
 
-                    cloned_players_in_team.update({team['id']: cloned_team_player})
+                    team_id = team['id']
+
+                    if not (team_id in cloned_players_in_team.keys()):
+                        cloned_players_in_team.update({team_id: []})
+                        cloned_players_in_team[team_id].append(cloned_team_player)
+                    else:
+                        cloned_players_in_team[team_id].append(cloned_team_player)
 
             json.dump(cloned_players_in_team, file, sort_keys=True, indent=4)
 
@@ -192,17 +198,18 @@ class ExportPlayoff(object):
             json.dump(cloned_leaderboards_design, file, sort_keys=True, indent=4)
 
     def export_design(self):
+        """Export all design of the original game in a file"""
         self.export_teams_design()
         self.export_metric_design()
         self.export_actions_design()
         self.export_leaderboards_design()
 
     def export_istances(self):
+        """Export all istances of the original game in a file"""
         self.export_teams_instances()
         self.export_players()
         self.export_players_in_team()
         self.export_players_feed()
-
 
 
 if __name__ == '__main__':

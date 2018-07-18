@@ -282,25 +282,29 @@ class PlayoffMigration(object):
         for item in metrics_design_id:
             self.__get_game(game).delete("/design/versions/latest/metrics/" + item['id'], {})
 
-    def delete_all_info(self, game: Games):
+    def delete_all_design(self, game: Games):
+        """Deletes every design from the chosen game"""
         self.delete_leaderboards_design(game)
         self.delete_actions_design(game)
         self.delete_metrics_design(game)
+        self.delete_teams_design(game)
+
+    def delete_all_istances(self, game: Games):
+        """Deletes every istances from the chosen game"""
         self.delete_player_instances(game)
         self.delete_teams_instances(game)
-        self.delete_teams_design(game)
 
     # ++++++++++++++++++++++++
     # MIGRATION METHODS
 
-    def __migrate_teams_design(self):
+    def migrate_teams_design(self):
         """ Migrate teams design from original game to the cloned one """
         teams_design = self.get_teams_design(Games.original)
 
         for team in teams_design:
             single_team_design = self.get_single_team_design(Games.original, team['id'])
 
-            # TODO : verifie if is necessary
+            # TODO : check if it's necessary
             # json parameter for post request
             cloned_single_team_design = {
                 'name': single_team_design['name'],
@@ -320,7 +324,7 @@ class PlayoffMigration(object):
         for team in teams_by_id:
             team_instance_info = self.get_team_instance_info(Games.original, teams_by_id.get(team))
 
-            # TODO : check if is necessary
+            # TODO : check if it's necessary
             cloned_team_instance_info = {
                 'id': team_instance_info['id'],
                 'name': team_instance_info['name'],
@@ -360,7 +364,7 @@ class PlayoffMigration(object):
                 }
                 self.__get_game(Games.cloned).post("/admin/teams/" + team['id'] + "/join", {}, cloned_team_player)
 
-    def __migrate_metrics_design(self):
+    def migrate_metrics_design(self):
         """ Migrates metrics design from original game to the cloned one """
         metrics_design_id = self.get_metrics_design_id(Games.original)
 
@@ -376,7 +380,7 @@ class PlayoffMigration(object):
 
             self.__get_game(Games.cloned).post("/design/versions/latest/metrics", {}, input_metric_design)
 
-    def __migrate_action_design(self):
+    def migrate_action_design(self):
         """ Migrates actions design from original game to the cloned one """
         actions_design = self.get_actions_design(Games.original)
 
@@ -410,7 +414,7 @@ class PlayoffMigration(object):
                                                        {"player_id": player_id}, {"variables": variables,
                                                                                   "scopes": scopes})
 
-    def __migrate_leaderboards_design(self):
+    def migrate_leaderboards_design(self):
         leaderboards_id = self.get_leaderboards_by_id(Games.original)
 
         for id_lead in leaderboards_id:
@@ -426,7 +430,22 @@ class PlayoffMigration(object):
 
             self.__get_game(Games.cloned).post("/design/versions/latest/leaderboards", {}, boards_single_design_info)
 
+    def migrate_all_design(self):
+        """Migrates all design from original game to the cloned ones"""
+        self.migrate_teams_design()
+        self.migrate_metrics_design()
+        self.migrate_action_design()
+        self.migrate_leaderboards_design()
+
+    def migrate_all_istances(self):
+        """Migrates all istances from original game to the cloned ones"""
+        self.migrate_teams_instances()
+        self.migrate_players()
+        self.migrate_players_in_team()
+
 
 if __name__ == '__main__':
     p = PlayoffMigration()
+    #p.delete_all_istances(Games.cloned)
+    #p.migrate_all_istances()
     print(p)

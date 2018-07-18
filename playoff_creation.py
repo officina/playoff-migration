@@ -2,11 +2,11 @@ from playoff import Playoff, PlayoffException
 import os
 from dotenv import load_dotenv
 import json
-from pprint import pprint
 
 
 class PlayoffCreation(object):
-    """ Purpose of this class is to retrieve information from specific json formatted file e put data in a Playoff game """
+    """ Purpose of this class is to retrieve information from specific json formatted file e put data in a
+    Playoff game """
 
     __file_path: str
 
@@ -59,7 +59,9 @@ class PlayoffCreation(object):
             players_team = json.load(file)
 
         for key, value in players_team.items():
-            self.target.post("/admin/teams/" + key + "/join", {}, value)
+
+            for player_info in value:
+                self.target.post("/admin/teams/" + key + "/join", {}, player_info)
 
     def import_metric_design(self):
         """ Import metrics design from file and post them in the game """
@@ -95,13 +97,14 @@ class PlayoffCreation(object):
             self.target.post("/design/versions/latest/leaderboards", {}, value)
 
     def import_all_design(self):
+        """Import all design from file in the game"""
         self.import_teams_design()
         self.import_metric_design()
         self.import_action_design()
         self.import_leaderboard_design()
 
     def import_all_istances(self):
-        """ Import all data in the game """
+        """Import all istances from file in the game"""
         self.import_teams_instance()
         self.import_players()
         self.import_players_in_team()
@@ -153,16 +156,16 @@ class PlayoffCreation(object):
             self.target.delete('/design/versions/latest/teams/' + team['id'], {})
 
     def delete_all_design(self):
+        """Delete all design in the cloned game"""
         self.delete_leaderboards_design()
         self.delete_actions_design()
         self.delete_metrics_design()
         self.delete_teams_design()
 
     def delete_all_istances(self):
-        """ Delete all info in the game """
+        """Delete all istances in the cloned game"""
         self.delete_player_instances()
         self.delete_teams_instances()
-
 
     # +++++++++++++++++++++
     # INFORMATION RETRIEVER
@@ -242,4 +245,4 @@ class PlayoffCreation(object):
 
 if __name__ == '__main__':
     pc = PlayoffCreation()
-    pprint(pc)
+    print(pc)

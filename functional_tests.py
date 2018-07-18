@@ -44,7 +44,6 @@ class PlayoffMigrationTest(unittest.TestCase):
 
     def test3_original_game_players_by_team_match_cloned_ones(self):
         # i giocatori del gioco nuovo sono associati agli stessi team del gioco vecchio
-        self.test1_cloned_game_contains_all_teams_from_original_game()  # check if both games have same number of teams
         self.pm.migrate_players_in_team()
         self.assertTrue(self.pm.get_players_by_teams(Games.original) == self.pm.get_players_by_teams(Games.cloned))
 
@@ -89,7 +88,7 @@ class PlayoffMigrationTest(unittest.TestCase):
 
     def test5_leaderboards_containing_scores_0(self):
         """ le leaderboard generate contengono degli zeri per i giocatori che non hanno fatto action """
-        self.assertTrue(not self.pm.get_players_with_score_0(Games.cloned))
+        self.assertTrue(self.pm.get_players_with_score_0(Games.cloned))
 
     # ++++++++++++++++
     # NON IMPLEMENTATI
