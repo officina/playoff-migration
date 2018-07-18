@@ -2,6 +2,7 @@ from playoff import Playoff, PlayoffException
 import os
 from dotenv import load_dotenv
 import json
+import logging
 
 
 class PlayoffCreation(object):
@@ -11,6 +12,15 @@ class PlayoffCreation(object):
     __file_path: str
 
     def __init__(self):
+        self._logger = logging.getLogger("creation_logger")
+        self._logger.setLevel(logging.DEBUG)
+        ch = logging.FileHandler(filename="creation.log", mode="w")
+        ch.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', '%m/%d/%Y %I:%M:%S %p')
+        ch.setFormatter(formatter)
+        self._logger.addHandler(ch)
+        self._logger.info("PlayoffCreation logger is running...")
+
         from pathlib import Path  # python3 only
         env_path = Path('.') / '.env'
         load_dotenv(dotenv_path=env_path)
@@ -31,6 +41,8 @@ class PlayoffCreation(object):
 
     def import_teams_design(self):
         """ Import teams design from file and post them in the game """
+        self._logger.info(self.import_teams_design.__name__ + " called")
+
         with open(self.__file_path + "teamsDesign.json", "r") as file:
             teams_design = json.load(file)
 
@@ -39,6 +51,8 @@ class PlayoffCreation(object):
 
     def import_teams_instance(self):
         """ Import teams instances from file and post them in the game """
+        self._logger.info(self.import_teams_instance.__name__ + " called")
+
         with open(self.__file_path + "teamsInstances.json", "r") as file:
             teams_instance = json.load(file)
 
@@ -47,6 +61,8 @@ class PlayoffCreation(object):
 
     def import_players(self):
         """ Import players from file and post them in the game """
+        self._logger.info(self.import_players.__name__ + " called")
+
         with open(self.__file_path + "players.json", "r") as file:
             players = json.load(file)
 
@@ -55,6 +71,8 @@ class PlayoffCreation(object):
 
     def import_players_in_team(self):
         """ Import players in teams from file and post them in the game """
+        self._logger.info(self.import_players_in_team.__name__ + " called")
+
         with open(self.__file_path + "playersInTeam.json", "r") as file:
             players_team = json.load(file)
 
@@ -65,6 +83,8 @@ class PlayoffCreation(object):
 
     def import_metric_design(self):
         """ Import metrics design from file and post them in the game """
+        self._logger.info(self.import_metric_design.__name__ + " called")
+
         with open(self.__file_path + "metricDesign.json", "r") as file:
             metrics_design = json.load(file)
 
@@ -73,6 +93,8 @@ class PlayoffCreation(object):
 
     def import_action_design(self):
         """ Import actions design from file and post them in the game """
+        self._logger.info(self.import_action_design.__name__ + " called")
+
         with open(self.__file_path + "actionsDesign.json", "r") as file:
             actions_design = json.load(file)
 
@@ -81,6 +103,8 @@ class PlayoffCreation(object):
 
     def import_players_feed(self):
         """ Import players feed from file and post them in the game """
+        self._logger.info(self.import_players_feed.__name__ + " called")
+
         with open(self.__file_path + "playersFeed.json", "r") as file:
             players_feed = json.load(file)
 
@@ -92,6 +116,8 @@ class PlayoffCreation(object):
 
     def import_leaderboard_design(self):
         """ Import leaderboard design from file and post them in the game """
+        self._logger.info(self.import_leaderboard_design.__name__ + " called")
+
         with open(self.__file_path + "leaderboardsDesign.json", "r") as file:
             leaderboards_design = json.load(file)
 
@@ -100,6 +126,8 @@ class PlayoffCreation(object):
 
     def import_all_design(self):
         """Import all design from file in the game"""
+        self._logger.info("Importing design...")
+
         self.import_teams_design()
         self.import_metric_design()
         self.import_action_design()
@@ -107,6 +135,8 @@ class PlayoffCreation(object):
 
     def import_all_istances(self):
         """Import all istances from file in the game"""
+        self._logger.info("Importing instances...")
+
         self.import_teams_instance()
         self.import_players()
         self.import_players_in_team()
@@ -117,6 +147,8 @@ class PlayoffCreation(object):
 
     def delete_leaderboards_design(self):
         """ Delete leaderboards design in the game """
+        self._logger.info(self.delete_leaderboards_design.__name__ + " called")
+
         leaderboards_design = self.get_leaderboards_by_id()
 
         for item in leaderboards_design:
@@ -124,6 +156,8 @@ class PlayoffCreation(object):
 
     def delete_actions_design(self):
         """ Delete actions design in the game """
+        self._logger.info(self.delete_actions_design.__name__ + " called")
+
         actions_design = self.get_actions_design()
 
         for action in actions_design:
@@ -131,6 +165,8 @@ class PlayoffCreation(object):
 
     def delete_metrics_design(self):
         """ Deletes metrics design in the game"""
+        self._logger.info(self.delete_metrics_design.__name__ + " called")
+
         metrics_design_id = self.get_metrics_design_id()
 
         for item in metrics_design_id:
@@ -138,6 +174,8 @@ class PlayoffCreation(object):
 
     def delete_player_instances(self):
         """ Deletes all players in the game"""
+        self._logger.info(self.delete_player_instances.__name__ + " called")
+
         players_instance = self.get_players_by_id()
 
         for player in players_instance:
@@ -145,6 +183,8 @@ class PlayoffCreation(object):
 
     def delete_teams_instances(self):
         """ Delete teams instances in the game """
+        self._logger.info(self.delete_teams_instances.__name__ + " called")
+
         teams_instance = self.get_teams_by_id()
 
         for team in teams_instance:
@@ -152,6 +192,8 @@ class PlayoffCreation(object):
 
     def delete_teams_design(self):
         """ Delete teams design in the game """
+        self._logger.info(self.delete_teams_design.__name__ + " called")
+
         teams_design = self.get_teams_design()
 
         for team in teams_design:
@@ -159,6 +201,8 @@ class PlayoffCreation(object):
 
     def delete_all_design(self):
         """Delete all design in the cloned game"""
+        self._logger.info("Deleting design...")
+
         self.delete_leaderboards_design()
         self.delete_actions_design()
         self.delete_metrics_design()
@@ -166,6 +210,8 @@ class PlayoffCreation(object):
 
     def delete_all_istances(self):
         """Delete all istances in the cloned game"""
+        self._logger.info("Deleting instances...")
+
         self.delete_player_instances()
         self.delete_teams_instances()
 
@@ -247,6 +293,6 @@ class PlayoffCreation(object):
 
 if __name__ == '__main__':
     pc = PlayoffCreation()
-    pc.delete_all_istances()
-    pc.import_all_istances()
+    # pc.delete_all_istances()
+    # pc.import_all_istances()
     print(pc)

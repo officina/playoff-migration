@@ -16,17 +16,18 @@ class PlayoffMigration(object):
     """ This class implements all the necessary methods and attributes to clone a game and scope its assetts in a
     second one """
 
-    _original: Playoff = None
-    _cloned: Playoff = None
+    _original: Playoff
+    _cloned: Playoff
 
     def __init__(self):
         self._logger = logging.getLogger("migration_logger")
         self._logger.setLevel(logging.DEBUG)
-        ch = logging.FileHandler("datalog.log")
+        ch = logging.FileHandler(filename="migration.log", mode="w")
         ch.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', '%m/%d/%Y %I:%M:%S %p')
         ch.setFormatter(formatter)
         self._logger.addHandler(ch)
+        self._logger.info("PlayoffMigration logger is running...")
 
         from pathlib import Path  # python3 only
         env_path = Path('.') / '.env'
@@ -317,6 +318,8 @@ class PlayoffMigration(object):
 
     def delete_all_design(self, game: Games):
         """Deletes every design from the chosen game"""
+        self._logger.info("Deleting design...")
+
         self.delete_leaderboards_design(game)
         self.delete_actions_design(game)
         self.delete_metrics_design(game)
@@ -324,6 +327,8 @@ class PlayoffMigration(object):
 
     def delete_all_istances(self, game: Games):
         """Deletes every istances from the chosen game"""
+        self._logger.info("Deleting instances...")
+
         self.delete_player_instances(game)
         self.delete_teams_instances(game)
 
@@ -482,6 +487,8 @@ class PlayoffMigration(object):
 
     def migrate_all_design(self):
         """Migrates all design from original game to the cloned ones"""
+        self._logger.info("Migrating design...")
+
         self.migrate_teams_design()
         self.migrate_metrics_design()
         self.migrate_action_design()
@@ -489,6 +496,8 @@ class PlayoffMigration(object):
 
     def migrate_all_istances(self):
         """Migrates all istances from original game to the cloned ones"""
+        self._logger.info("Migrating instances...")
+
         self.migrate_teams_instances()
         self.migrate_players()
         self.migrate_players_in_team()
