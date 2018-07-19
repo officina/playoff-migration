@@ -5,7 +5,7 @@ import json
 import logging
 
 
-class PlayoffCreation(object):
+class ImportData(object):
     """ Purpose of this class is to retrieve information from specific json formatted file e put data in a
     Playoff game """
 
@@ -19,7 +19,7 @@ class PlayoffCreation(object):
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', '%m/%d/%Y %I:%M:%S %p')
         ch.setFormatter(formatter)
         self._logger.addHandler(ch)
-        self._logger.info("PlayoffCreation logger is running...")
+        self._logger.info("ImportData logger is running...")
 
         from pathlib import Path  # python3 only
         env_path = Path('.') / '.env'
@@ -292,7 +292,7 @@ class PlayoffCreation(object):
 
 
 if __name__ == '__main__':
-    pc = PlayoffCreation()
+    pc = ImportData()
     # pc.delete_all_istances()
     # pc.import_all_istances()
     print(pc)
