@@ -1,23 +1,58 @@
-from playoff import Playoff, PlayoffException
 import os
-from dotenv import load_dotenv
-from pprint import pprint
 from enum import Enum
+from pprint import pprint
 import logging
+
+from playoff import Playoff, PlayoffException
+from dotenv import load_dotenv
 
 
 class Games(Enum):
     """ Enumeration type that identifies each different game """
     original = "original"
     cloned = "cloned"
+    scoped = "scoped"
 
 
 class PlayoffMigration(object):
     """ This class implements all the necessary methods and attributes to clone a game and scope its assetts in a
     second one """
+    ACTION_LEADERBOARD_PARSER = {
+        "sfida_circle_the_dot": "globale_punti_circle_the_dot_scoped",
+        "sfida_circle_the_dot_reset": "globale_punti_circle_the_dot_scoped",
+        "sfida_circledot": "globale_punti_circle_dot_scoped",
+        "sfida_circledot_reset": "globale_punti_circle_dot_scoped",
+        "sfida_color_flow": "globale_punti_color_flow_scoped",
+        "sfida_color_flow_reset": "globale_punti_color_flow_scoped",
+        "sfida_draw_line": "globale_punti_draw_line_scoped",
+        "sfida_draw_line_reset": "globale_punti_draw_line_scoped",
+        "sfida_electrio": "globale_punti_electrio",
+        "sfida_electrio_reset": "globale_punti_electrio",
+        "sfida_engineerio": "globale_punti_engineerio",
+        "sfida_engineerio_reset": "globale_punti_engineerio",
+        "sfida_focus": "globale_punti_focus",
+        "sfida_focus_reset": "globale_punti_focus",
+        "sfida_gummy_block": "globale_punti_gummy_block",
+        "sfida_gummy_block_reset": "globale_punti_gummy_block",
+        "sfida_light_color": "globale_punti_light_color",
+        "sfida_light_color_reset": "globale_punti_light_color",
+        "sfida_lights": "globale_punti_lights",
+        "sfida_lights_reset": "globale_punti_lights",
+        "sfida_line_follower": "globale_punti_line_follower",
+        "sfida_line_follower_reset": "globale_punti_line_follower",
+        "sfida_make7": "globale_punti_make7",
+        "sfida_make7_reset": "globale_punti_make7",
+        "sfida_parity_with_number": "globale_punti_parity_with_number",
+        "sfida_parity_with_number_reset": "globale_punti_parity_with_number",
+        "sfida_swappy_balls": "globale_punti_swappy_balls",
+        "sfida_swappy_balls_reset": "globale_punti_swappy_balls",
+        "sfida_thief_challenge": "globale_punti_thief_challenge",
+        "sfida_thief_challenge_reset": "globale_punti_thief_challenge",
+    }
 
     _original: Playoff
     _cloned: Playoff
+    _scoped: Playoff
 
     def __init__(self):
         self._logger = logging.getLogger("migration_logger")
@@ -39,15 +74,20 @@ class PlayoffMigration(object):
             allow_unsecure=True
         )
         self._cloned = Playoff(
+            client_id=os.environ["GAMELABCLONSCOPED2_CLIENT_ID"],
+            client_secret=os.environ["GAMELABCLONSCOPED2_CLIENT_SECRET"],
+            type='client',
+            allow_unsecure=True
+        )
+        self._scoped = Playoff(
             client_id=os.environ["GAMELABCLONSCOPED3_CLIENT_ID"],
             client_secret=os.environ["GAMELABCLONSCOPED3_CLIENT_SECRET"],
             type='client',
             allow_unsecure=True
         )
 
-    # TODO : choose a better rappresentation of PlayoffMigration object
     def __str__(self):
-        return f'playoff={self._original}' + f'playoff={self._cloned}'
+        return f'playoff={self._original}' + f'playoff={self._cloned}' + f'playoff={self._scoped}'
 
     # ++++++++++++++++++++++++
     # UTILITIES
@@ -58,6 +98,8 @@ class PlayoffMigration(object):
             return self._original
         elif game == Games.cloned:
             return self._cloned
+        elif game == Games.scoped:
+            return self._scoped
 
     @staticmethod
     def __get_number_pages(number):
@@ -92,18 +134,17 @@ class PlayoffMigration(object):
         """ Returns all the teams ids  """
         self._logger.info(self.get_teams_by_id.__name__ + " called")
 
-        teams_id = {}
-        count_key = 0
+        teams_id = []
         game_instance = self.__get_game(game)
         number_teams = self.get_number_teams(game)
-        number_pages = PlayoffMigration.__get_number_pages(number_teams)  # pagination management
+        number_pages = PlayoffMigration.__get_number_pages(number_teams)
 
         for count in range(number_pages):
+
             teams = game_instance.get('/admin/teams', {"skip": str(count * 100), "limit": "100"})
 
             for item in teams['data']:
-                teams_id.update({count_key: item['id']})
-                count_key += 1
+                teams_id.append(item['id'])
 
         return teams_id
 
@@ -133,14 +174,14 @@ class PlayoffMigration(object):
         teams_by_id = self.get_teams_by_id(game)
         players_by_teams = {}
 
-        for key in teams_by_id:
+        for team in teams_by_id:
             count_key = 0
             game_instance = self.__get_game(game)
-            number_players_in_team = self.get_number_players_in_team(game, teams_by_id.get(key))
+            number_players_in_team = self.get_number_players_in_team(game, team)
             number_pages = PlayoffMigration.__get_number_pages(number_players_in_team)  # pagination management
 
             for count in range(number_pages):
-                players_in_team = game_instance.get('/admin/teams/' + teams_by_id.get(key) + '/members',
+                players_in_team = game_instance.get('/admin/teams/' + team + '/members',
                                                     {"skip": str(count * 100), "limit": "100"})
 
                 pl_team = {}
@@ -148,7 +189,7 @@ class PlayoffMigration(object):
                     pl_team.update({count_key: item['id']})
                     count_key += 1
 
-                players_by_teams.update({teams_by_id.get(key): pl_team})
+                players_by_teams.update({team: pl_team})
 
         return players_by_teams
 
@@ -279,7 +320,7 @@ class PlayoffMigration(object):
         teams_instance = self.get_teams_by_id(game)
 
         for team in teams_instance:
-            self.__get_game(game).delete('/admin/teams/' + teams_instance.get(team), {})
+            self.__get_game(game).delete('/admin/teams/' + team, {})
 
     def delete_player_instances(self, game: Games):
         """ Deletes all the player instances from the selected game"""
@@ -325,6 +366,8 @@ class PlayoffMigration(object):
         self.delete_metrics_design(game)
         self.delete_teams_design(game)
 
+        self._logger.info("Deleted design")
+
     def delete_all_istances(self, game: Games):
         """Deletes every istances from the chosen game"""
         self._logger.info("Deleting instances...")
@@ -332,10 +375,12 @@ class PlayoffMigration(object):
         self.delete_player_instances(game)
         self.delete_teams_instances(game)
 
+        self._logger.info("Deleted instances")
+
     # ++++++++++++++++++++++++
     # MIGRATION METHODS
 
-    def migrate_teams_design(self):
+    def migrate_teams_design(self, game: Games):
         """ Migrate teams design from original game to the cloned one """
         self._logger.info(self.migrate_teams_design.__name__ + " called")
 
@@ -355,16 +400,16 @@ class PlayoffMigration(object):
                 '_hues': single_team_design['_hues']
             }
 
-            self.__get_game(Games.cloned).post('/design/versions/latest/teams', {}, cloned_single_team_design)
+            self.__get_game(game).post('/design/versions/latest/teams', {}, cloned_single_team_design)
 
-    def migrate_teams_instances(self):
+    def migrate_teams_instances(self, game: Games):
         """ Migrate teams instances from original game to the cloned one """
         self._logger.info(self.migrate_teams_instances.__name__ + " called")
 
         teams_by_id = self.get_teams_by_id(Games.original)
 
         for team in teams_by_id:
-            team_instance_info = self.get_team_instance_info(Games.original, teams_by_id.get(team))
+            team_instance_info = self.get_team_instance_info(Games.original, team)
 
             # TODO : check if it's necessary
             cloned_team_instance_info = {
@@ -374,9 +419,9 @@ class PlayoffMigration(object):
                 'definition': team_instance_info['definition']['id']
             }
 
-            self.__get_game(Games.cloned).post('/admin/teams', {}, cloned_team_instance_info)
+            self.__get_game(game).post('/admin/teams', {}, cloned_team_instance_info)
 
-    def migrate_players(self):
+    def migrate_players(self, game: Games):
         """ Migrates the player instances from the original game to the cloned one """
         self._logger.info(self.migrate_players.__name__ + " called")
 
@@ -389,9 +434,9 @@ class PlayoffMigration(object):
                 'id': str(player_instance_info['id']),
                 'alias': str(player_instance_info['alias'])}
 
-            self.__get_game(Games.cloned).post('/admin/players', {}, cloned_player_instance_info)
+            self.__get_game(game).post('/admin/players', {}, cloned_player_instance_info)
 
-    def migrate_players_in_team(self):
+    def migrate_players_in_team(self, game: Games):
         """ Migrates players from team in original game to the cloned one """
         self._logger.info(self.migrate_players_in_team.__name__ + " called")
 
@@ -408,9 +453,9 @@ class PlayoffMigration(object):
                     },
                     "player_id": player_id
                 }
-                self.__get_game(Games.cloned).post("/admin/teams/" + team['id'] + "/join", {}, cloned_team_player)
+                self.__get_game(game).post("/admin/teams/" + team['id'] + "/join", {}, cloned_team_player)
 
-    def migrate_metrics_design(self):
+    def migrate_metrics_design(self, game: Games):
         """ Migrates metrics design from original game to the cloned one """
         self._logger.info(self.migrate_metrics_design.__name__ + " called")
 
@@ -426,9 +471,9 @@ class PlayoffMigration(object):
                 "constraints": single_metric_design['constraints']
             }
 
-            self.__get_game(Games.cloned).post("/design/versions/latest/metrics", {}, input_metric_design)
+            self.__get_game(game).post("/design/versions/latest/metrics", {}, input_metric_design)
 
-    def migrate_action_design(self):
+    def migrate_action_design(self, game: Games):
         """ Migrates actions design from original game to the cloned one """
         self._logger.info(self.migrate_action_design.__name__ + " called")
 
@@ -445,10 +490,10 @@ class PlayoffMigration(object):
                 "variables": single_action_design['variables']
             }
 
-            self.__get_game(Games.cloned).post("/design/versions/latest/actions", {}, single_action_info)
+            self.__get_game(game).post("/design/versions/latest/actions", {}, single_action_info)
 
-    def migrate_players_feed(self):
-        """ Migrates players feed from original game to cloned one """
+    def migrate_players_feed(self, game: Games):
+        """Migrates players feed from original game to cloned one"""
         self._logger.info(self.migrate_players_feed.__name__ + " called")
 
         players_id = self.get_players_by_id(Games.original)
@@ -462,12 +507,12 @@ class PlayoffMigration(object):
                     variables = item['action']['vars']
                     scopes = item['scopes']
 
-                    self.__get_game(Games.cloned).post("/runtime/actions/" + action_id + "/play",
+                    self.__get_game(game).post("/runtime/actions/" + action_id + "/play",
                                                        {"player_id": player_id}, {"variables": variables,
                                                                                   "scopes": scopes})
 
-    def migrate_leaderboards_design(self):
-        """ Migrates leaderboards design from original game to cloned one """
+    def migrate_leaderboards_design(self, game: Games):
+        """Migrates leaderboards design from original game to cloned one"""
         self._logger.info(self.migrate_leaderboards_design.__name__ + " called")
 
         leaderboards_id = self.get_leaderboards_by_id(Games.original)
@@ -483,28 +528,169 @@ class PlayoffMigration(object):
                 "metric": single_design_lead['metric']
             }
 
-            self.__get_game(Games.cloned).post("/design/versions/latest/leaderboards", {}, boards_single_design_info)
+            self.__get_game(game).post("/design/versions/latest/leaderboards", {}, boards_single_design_info)
 
-    def migrate_all_design(self):
+    def migrate_all_design(self, game: Games):
         """Migrates all design from original game to the cloned ones"""
         self._logger.info("Migrating design...")
 
-        self.migrate_teams_design()
-        self.migrate_metrics_design()
-        self.migrate_action_design()
-        self.migrate_leaderboards_design()
+        self.migrate_teams_design(game)
+        self.migrate_metrics_design(game)
+        self.migrate_action_design(game)
+        self.migrate_leaderboards_design(game)
 
-    def migrate_all_istances(self):
+        self._logger.info("Migrating design finished")
+
+    def migrate_all_istances(self, game: Games):
         """Migrates all istances from original game to the cloned ones"""
         self._logger.info("Migrating instances...")
 
-        self.migrate_teams_instances()
-        self.migrate_players()
-        self.migrate_players_in_team()
+        self.migrate_teams_instances(game)
+        self.migrate_players(game)
+        self.migrate_players_in_team(game)
+        self.migrate_players_feed(game)
+
+        self._logger.info("Migrating instances finished")
+
+    # ++++++++++++++++++++++++
+    # SCOPED METHODS
+
+    def migrate_scoped_leaderboards_design(self, game: Games):
+        """Migrates scoped leaderboards design from original game to cloned one"""
+        self._logger.info(self.migrate_scoped_leaderboards_design.__name__ + " called")
+
+        leaderboards_id = self.get_leaderboards_by_id(Games.original)
+
+        for id_lead in leaderboards_id:
+            single_design_lead = self.get_single_leaderboard_design(Games.original, id_lead)
+
+            boards_single_design_info = {
+                "id": single_design_lead['id'],
+                "name": single_design_lead['name'],
+                "entity_type": single_design_lead['entity_type'],
+                "scope": {"type": "custom"},
+                "metric": single_design_lead['metric']
+            }
+
+            self.__get_game(game).post("/design/versions/latest/leaderboards", {}, boards_single_design_info)
+
+    def migrate_scoped_players_feed(self, game: Games):
+        """Migrates scoped players feed from original game to cloned one"""
+        self._logger.info(self.migrate_scoped_players_feed.__name__ + " called")
+
+        players_id = self.get_players_by_id(Games.original)
+
+        for key, player_id in players_id.items():
+            player_feed = self.get_player_feed(Games.original, player_id)
+            player_profile = self.get_player_profile(Games.original, player_id)
+            players_teams = player_profile["teams"]
+
+            for item in player_feed:
+                if item['event'] == 'action':
+                    action_id = item['action']['id']
+                    variables = item['action']['vars']
+                    scopes = {}
+
+                    for team in players_teams:
+                        if team["id"] == "globale":
+                            scopes = self.get_globale_scopes(player_id, action_id)
+                            break
+                        elif team["id"] == "laboratorio_somma":
+                            scopes = self.get_lab_somma_scopes(player_id)
+                            break
+
+                    if scopes == {}:
+                        scopes = item['scopes']
+
+                    self.__get_game(game).post("/runtime/actions/" + action_id + "/play",
+                                               {"player_id": player_id}, {"variables": variables, "scopes": scopes})
+
+    def migrate_all_design_scoped(self, game: Games):
+        """Migrates all design from original game to the cloned ones"""
+        self._logger.info("Migrating design...")
+
+        self.migrate_teams_design(game)
+        self.migrate_metrics_design(game)
+        self.migrate_action_design(game)
+        self.migrate_scoped_leaderboards_design(game)
+
+        self._logger.info("Migrating design finished")
+
+    def migrate_all_istances_scoped(self, game: Games):
+        """Migrates all istances from original game to the cloned ones"""
+        self._logger.info("Migrating instances...")
+
+        self.migrate_teams_instances(game)
+        self.migrate_players(game)
+        self.migrate_players_in_team(game)
+        self.migrate_scoped_players_feed(game)
+
+        self._logger.info("Migrating instances finished")
+
+    def get_globale_scopes(self, player_id, action_id):
+        return [{
+                    "id": "globale_creativita",
+                    "entity_id": player_id
+                },
+                {
+                    "id": "globale_problem_solving",
+                    "entity_id": player_id
+                },
+                {
+                    "id": "globale_logica",
+                    "entity_id": player_id
+                },
+                {
+                    "id": "globale_punti",
+                    "entity_id": player_id
+                },
+                {
+                    "id": self.ACTION_LEADERBOARD_PARSER[action_id],
+                    "entity_id": player_id
+                }]
+
+    def get_lab_somma_scopes(self, player_id):
+        return [{
+                    "id": "tra_team_creativita",
+                    "entity_id": player_id
+                },
+                {
+                    "id": "tra_team_logica",
+                    "entity_id": player_id
+                },
+                {
+                    "id": "tra_team_problem_solving",
+                    "entity_id": player_id
+                },
+                {
+                    "id": "tra_team_punti",
+                    "entity_id": player_id
+                }]
+
+    def get_scoped_leaderboard(self, game: Games, leaderboard_id):
+        game_instance = self.__get_game(game)
+
+        data = {
+            "player_id": "atomasse",
+            "cycle": "alltime",
+            "limit": 10 ** 10,
+            "scope_id": leaderboard_id
+        }
+
+        return game_instance.get("/runtime/leaderboards/" + leaderboard_id, data)
+
+    def get_leaderboard(self, game: Games, leaderboard_id):
+        game_instance = self.__get_game(game)
+
+        data = {
+            "player_id": "atomasse",
+            "cycle": "alltime",
+            "limit": 10 ** 10,
+        }
+
+        return game_instance.get("/runtime/leaderboards/" + leaderboard_id, data)
 
 
 if __name__ == '__main__':
     p = PlayoffMigration()
-    p.delete_all_istances(Games.cloned)
-    p.migrate_all_istances()
     print(p)

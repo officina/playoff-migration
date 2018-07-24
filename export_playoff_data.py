@@ -364,8 +364,5 @@ class ExportRawData(object):
 if __name__ == '__main__':
     ep = ExportData()
     erp = ExportRawData()
-    #ep.export_design()
-    #ep.export_istances()
-    erp.export_raw_leaderboards_design()
-
     print(ep)
+    print(erp)

@@ -293,6 +293,4 @@ class ImportData(object):
 
 if __name__ == '__main__':
     pc = ImportData()
-    # pc.delete_all_istances()
-    # pc.import_all_istances()
     print(pc)
