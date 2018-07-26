@@ -103,7 +103,7 @@ class ExportData(object):
 
         with open(self.__file_path + "leaderboardsDesign.json", "w+") as file:
             cloned_leaderboards_design = {}
-            leaderboards_id = self.pm.get_leaderboards_by_id(Games.original)
+            leaderboards_id = self.pm.get_leaderboards_design_by_id(Games.original)
 
             for id_lead in leaderboards_id:
                 single_design_lead = self.pm.get_single_leaderboard_design(Games.original, id_lead)
@@ -351,7 +351,7 @@ class ExportRawData(object):
 
         with open(self.__file_path + "leaderboards_raw_design.json", "w+") as file:
             cloned_leaderboards_design = []
-            leaderboards_id = self.pm.get_leaderboards_by_id(Games.original)
+            leaderboards_id = self.pm.get_leaderboards_design_by_id(Games.original)
 
             for id_lead in leaderboards_id:
                 single_design_lead = self.pm.get_single_leaderboard_design(Games.original, id_lead)
