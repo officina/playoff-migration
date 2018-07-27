@@ -1,8 +1,7 @@
 import unittest
 import os
 
-from refactor_playoff_migration import Utility, ParameterException, \
-    GetPlayoffData
+from refactor_playoff_migration import *
 
 from playoff import Playoff
 from dotenv import load_dotenv
@@ -23,10 +22,126 @@ class UtilityTest(unittest.TestCase):
         self.assertEqual(self.ut.get_number_pages(101), 2)
 
 
+class PostPlayoffDesignTest(unittest.TestCase):
+    pp: PostPlayoffDesign
+    pg: GetPlayoffDesign
+
+    def setUp(self):
+        from pathlib import Path
+        env_path = Path('.') / '.env'
+        load_dotenv(dotenv_path=env_path)
+        playoff_client = Playoff(
+            client_id=os.environ["API_TEST_GAME_CLIENT_ID"],
+            client_secret=os.environ["API_TEST_GAME_CLIENT_SECRET"],
+            type='client',
+            allow_unsecure=True
+        )
+
+        self.pp = PostPlayoffDesign(playoff_client)
+        self.pg = GetPlayoffDesign(playoff_client)
+        self.pd = DeletePlayoffDesign(playoff_client)
+
+    def test_create_team_design(self):
+        void_data = {}
+        self.assertRaises(ParameterException, self.pp.create_team_design,
+                          void_data)
+
+        valid_data = {
+            'name': 'BaseTeam',
+            'id': 'base_team',
+            'permissions': [[
+                'Giocatore',
+                {
+                    'assign': True,
+                    'leave': True,
+                    'lock': True,
+                    'peer': True
+                }
+            ]],
+            'creator_roles': ['Giocatore'],
+            'settings': {
+                'access': ['PUBLIC'],
+                'max_global_instances': 'Infinity',
+                'max_player_instances': 'Infinity',
+                'max_players': 'Infinity',
+                'public': True,
+                'requires': {}
+            },
+            '_hues': {'Giocatore': 85}
+        }
+
+        teams_design = self.pg.get_teams_design()
+        old_count = len(teams_design)
+
+        self.pp.create_team_design(valid_data)
+
+        teams_design = self.pg.get_teams_design()
+        new_count = len(teams_design)
+
+        self.assertTrue(new_count == old_count + 1)
+
+class PostPlayoffDataTest(unittest.TestCase):
+    pp: PostPlayoffData
+    pg: GetPlayoffData
+
+    def setUp(self):
+        from pathlib import Path
+        env_path = Path('.') / '.env'
+        load_dotenv(dotenv_path=env_path)
+        playoff_client = Playoff(
+            client_id=os.environ["API_TEST_GAME_CLIENT_ID"],
+            client_secret=os.environ["API_TEST_GAME_CLIENT_SECRET"],
+            type='client',
+            allow_unsecure=True
+        )
+
+        self.pp = PostPlayoffData(playoff_client)
+        self.pg = GetPlayoffData(playoff_client)
+
+    def test_create_team(self):
+        """Test creation of a team
+
+        In order to properly test it, you need a team design, this is
+        why thi method create a design first
+        """
+        # crea un design
+
+        void_data = {}
+
+        self.assertRaises(ParameterException, self.pp.create_team, void_data)
+
+        valid_data = {
+            "id": "test_team",
+            "name": "TestTeam",
+            "access":
+        }
+
+    # creo un blocco di dati accettabili
+    # testo se viene creato il team
+    # prima della creazione conto il numero di team che ci sono
+    # faccio la creazione
+    # conto il numero di team dopo la creazione
+
+
+class GetPlayoffDesignTest(unittest.TestCase):
+
+    gp: GetPlayoffDesign
+
+    def setUp(self):
+        from pathlib import Path
+        env_path = Path('.') / '.env'
+        load_dotenv(dotenv_path=env_path)
+        playoff_client = Playoff(
+            client_id=os.environ["GAMELABNOTARGETV01_CLIENT_ID"],
+            client_secret=os.environ["GAMELABNOTARGETV01_CLIENT_SECRET"],
+            type='client',
+            allow_unsecure=True
+        )
+
+
 class GetPlayoffDataTest(unittest.TestCase):
 
     gp: GetPlayoffData
-    team_id: str
 
     def setUp(self):
         from pathlib import Path
@@ -78,7 +193,7 @@ class GetPlayoffDataTest(unittest.TestCase):
         for key in team_info_keys:
             self.assertTrue(key in team_info.keys())
 
-    def test_player_info(self):
+    def test_player_profile(self):
         player_id = "agazzani"
         player_info_keys = ['alias', 'id', 'teams']
 
@@ -105,3 +220,7 @@ class GetPlayoffDataTest(unittest.TestCase):
         for feed in player1_feed:
             for key in player_feed_keys:
                 self.assertTrue(key in feed.keys())
+
+
+class DeletePlayoffDataTest(unittest.TestCase):
+    pass

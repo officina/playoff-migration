@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import os
 from pathlib import Path
 
-from refactor_playoff_migration import GetPlayoffData
+from refactor_playoff_migration import GetPlayoffData, GetPlayoffDesign
 from playoff_migration import PlayoffMigration, Games
 
 from playoff import Playoff
@@ -21,9 +21,9 @@ team_id = "globale"
 player_id = "agazzani"
 
 gp = GetPlayoffData(playoff_client)
+gp_design = GetPlayoffDesign(playoff_client)
 pm = PlayoffMigration()
 
+team_design = gp_design.get_single_team_design("laboratorio")
 
-lead_by_id = pm.get_leaderboards_players(Games.original)
-
-pprint(lead_by_id)
+pprint(team_design)
