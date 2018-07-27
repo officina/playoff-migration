@@ -200,7 +200,7 @@ class DeletePlayoffDesign(object):
         if not metric_id:
             raise ParameterException("Parameter can't be empty")
 
-        self.game.delete(Constant.DESIGN_TEAMS + metric_id, {})
+        self.game.delete(Constant.DESIGN_METRICS + metric_id, {})
 
     def delete_single_action_design(self, action_id):
         """Delete chosen team_id from the game
@@ -211,7 +211,7 @@ class DeletePlayoffDesign(object):
         if not action_id:
             raise ParameterException("Parameter can't be empty")
 
-        self.game.delete(Constant.DESIGN_TEAMS + action_id, {})
+        self.game.delete(Constant.DESIGN_ACTIONS + action_id, {})
 
     def delete_single_leaderboard_design(self, leaderboard_id):
         """Delete chosen team_id from the game
@@ -222,7 +222,7 @@ class DeletePlayoffDesign(object):
         if not leaderboard_id:
             raise ParameterException("Parameter can't be empty")
 
-        self.game.delete(Constant.DESIGN_TEAMS + leaderboard_id, {})
+        self.game.delete(Constant.DESIGN_LEADERBOARDS + leaderboard_id, {})
 
     def delete_teams_design(self):
         """Delete teams design"""
@@ -654,12 +654,10 @@ class PlayoffMigrationDesign(object):
                 .get_single_metric_design(metric['id'])
 
             metric_data = {
-                'name': design_metric['name'],
-                'id': design_metric['id'],
-                'permissions': design_metric['permissions'],
-                'creator_roles': design_metric['creator_roles'],
-                'settings': design_metric['settings'],
-                '_hues': design_metric['_hues']
+                "id": design_metric['id'],
+                "name": design_metric['name'],
+                "type": design_metric['type'],
+                "constraints": design_metric['constraints']
             }
 
             self.design_creator.create_metric_design(metric_data)
@@ -675,12 +673,11 @@ class PlayoffMigrationDesign(object):
                 .get_single_action_design(action['id'])
 
             action_data = {
-                'name': design_action['name'],
-                'id': design_action['id'],
-                'permissions': design_action['permissions'],
-                'creator_roles': design_action['creator_roles'],
-                'settings': design_action['settings'],
-                '_hues': design_action['_hues']
+                "id": design_action['id'],
+                "name": design_action['name'],
+                "requires": design_action['requires'],
+                "rules": design_action['rules'],
+                "variables": design_action['variables']
             }
 
             self.design_creator.create_action_design(action_data)
@@ -696,12 +693,11 @@ class PlayoffMigrationDesign(object):
                 .get_single_leaderboard_design(leaderboard['id'])
 
             leaderboard_data = {
-                'name': design_leaderboard['name'],
-                'id': design_leaderboard['id'],
-                'permissions': design_leaderboard['permissions'],
-                'creator_roles': design_leaderboard['creator_roles'],
-                'settings': design_leaderboard['settings'],
-                '_hues': design_leaderboard['_hues']
+                "id": design_leaderboard['id'],
+                "name": design_leaderboard['name'],
+                "entity_type": design_leaderboard['entity_type'],
+                "scope": design_leaderboard['scope'],
+                "metric": design_leaderboard['metric']
             }
 
             self.design_creator.create_team_design(leaderboard_data)

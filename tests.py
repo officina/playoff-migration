@@ -47,7 +47,7 @@ class PostPlayoffDesignTest(unittest.TestCase):
                           void_data)
 
         valid_data = {
-            'name': 'BaseTeam',
+            'name': 'Base Team',
             'id': 'base_team',
             'permissions': [[
                 'Giocatore',
@@ -79,6 +79,37 @@ class PostPlayoffDesignTest(unittest.TestCase):
         new_count = len(teams_design)
 
         self.assertTrue(new_count == old_count + 1)
+
+        self.pd.delete_single_team_design("base_team")
+
+    def test_create_metric_design(self):
+        void_data = {}
+        self.assertRaises(ParameterException, self.pp.create_metric_design,
+                          void_data)
+
+        valid_data = {
+            "id": "ep",
+            "name": "Experience Points",
+            "type": "point",
+            "constraints": {
+                "min": "0",
+                "max": "Infinity",
+                "default": "0"
+            }
+        }
+
+        metrics_design = self.pg.get_metrics_design()
+        old_count = len(metrics_design)
+
+        self.pp.create_metric_design(valid_data)
+
+        metrics_design = self.pg.get_metrics_design()
+        new_count = len(metrics_design)
+
+        self.assertTrue(new_count == old_count + 1)
+
+        self.pd.delete_single_metric_design("ep")
+
 
 class PostPlayoffDataTest(unittest.TestCase):
     pp: PostPlayoffData
@@ -113,8 +144,9 @@ class PostPlayoffDataTest(unittest.TestCase):
         valid_data = {
             "id": "test_team",
             "name": "TestTeam",
-            "access":
+            "access": ""
         }
+        pass
 
     # creo un blocco di dati accettabili
     # testo se viene creato il team
