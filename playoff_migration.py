@@ -261,6 +261,7 @@ class PlayoffMigration(object):
         return self.__get_game(game).get(
             '/design/versions/latest/leaderboards/' + leaderboard, {})['scope']
 
+    # creato solo per ultimo test funzionale, non aggiunto
     # TODO : find a way to not use fixed "player_id"
     def get_leaderboards_players(self, game: Games):
             """ Returns every player and his score, for each leaderboard of the chosen game """
@@ -289,6 +290,7 @@ class PlayoffMigration(object):
 
             return leaderboards_content
 
+    # creato solo per ultimo test funzionale, non aggiunto
     def get_players_with_score_0(self, game: Games):
             """ Return a list containing all the id of the players who have a 0 score in a leaderboard """
             self._logger.info(self.get_players_with_score_0.__name__ + " called")
@@ -388,6 +390,7 @@ class PlayoffMigration(object):
         for item in metrics_design_id:
             self.__get_game(game).delete("/design/versions/latest/metrics/" + item['id'], {})
 
+    #
     def delete_all_design(self, game: Games):
         """Deletes every design from the chosen game"""
         self._logger.info("Deleting design...")
@@ -399,6 +402,7 @@ class PlayoffMigration(object):
 
         self._logger.info("Deleted design")
 
+    #
     def delete_all_istances(self, game: Games):
         """Deletes every istances from the chosen game"""
         self._logger.info("Deleting instances...")
@@ -588,6 +592,7 @@ class PlayoffMigration(object):
             self.__get_game(game).post("/design/versions/latest/leaderboards",
                                        {}, boards_single_design_info)
 
+    #
     def migrate_all_design(self, game: Games):
         """Migrates all design from original game to the cloned ones"""
         self._logger.info("Migrating design...")
@@ -599,6 +604,7 @@ class PlayoffMigration(object):
 
         self._logger.info("Migrating design finished")
 
+    #
     def migrate_all_istances(self, game: Games):
         """Migrates all istances from original game to the cloned ones"""
         self._logger.info("Migrating instances...")

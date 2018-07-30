@@ -63,7 +63,6 @@ class Utility(object):
 # =======================
 
 
-# TODO: make tests for this class
 class GetPlayoffDesign(object):
     """Class that make GET call via Playoff client to retrieve design from
     the Playoff game
@@ -117,7 +116,6 @@ class GetPlayoffDesign(object):
         return self.game.get(Constant.DESIGN_LEADERBOARDS + leaderboard_id, {})
 
 
-# TODO: make tests for this class
 class PostPlayoffDesign(object):
     """Class that make POST call via Playoff client to create design
     in the Playoff game
@@ -170,7 +168,6 @@ class PostPlayoffDesign(object):
         self.game.post(Constant.DESIGN_LEADERBOARDS, {}, design_data)
 
 
-# TODO: make tests for this class
 class DeletePlayoffDesign(object):
     """Class that make DELETE call via Playoff client to erase design
     from the Playoff game
@@ -368,7 +365,6 @@ class GetPlayoffData(object):
         return player_feed
 
 
-# TODO: make tests for this class
 class PostPlayoffData(object):
     """Class that make POST call via Playoff client to create instances
     in the Playoff game
@@ -426,7 +422,6 @@ class PostPlayoffData(object):
                        player_id, data)
 
 
-# TODO: make tests for this class
 class DeletePlayoffData(object):
     """Class that make DELETE call via Playoff client to erase data
     from the Playoff game
@@ -474,11 +469,37 @@ class DeletePlayoffData(object):
 
 
 # =======================
+# FACILITATOR CLASS
+# =======================
+
+# TODO: decide better approach
+# 1: have a derived class that declare 2 new method (this class)
+# 2: insert in class all methods (PlayoffMigration)
+class DeleteAll(DeletePlayoffDesign, DeletePlayoffData):
+    """Class that help delete all data and design from a game without
+    create two instances of base classes
+    """
+    def __init__(self, game: Playoff):
+        super(DeleteAll, self).__init__(game)
+
+    def delete_all_design(self):
+        """Delete all design from the game"""
+        self.delete_leaderboards_design()
+        self.delete_actions_design()
+        self.delete_metrics_design()
+        self.delete_teams_design()
+
+    def delete_all_data(self):
+        """Delete all data from the game"""
+        self.delete_players()
+        self.delete_teams()
+
+
+# =======================
 # MIGRATION CLASS
 # =======================
 
 
-# TODO: make tests for this class
 class PlayoffMigrationData(object):
     """Class that make a migration of data from a Playoff game to an other"""
 
@@ -595,8 +616,12 @@ class PlayoffMigrationData(object):
 
                 self.data_creator.take_action(action_id, player_id, data)
 
+    def migrate_all_data(self):
+        """Migrate all data"""
+        self.migrate_teams()
+        self.migrate_players()
 
-# TODO: make tests for this class
+
 class PlayoffMigrationDesign(object):
     """Class that make a migration of design from a Playoff game to an other"""
 
@@ -701,3 +726,10 @@ class PlayoffMigrationDesign(object):
             }
 
             self.design_creator.create_team_design(leaderboard_data)
+
+    def migrate_all_design(self):
+        """Migrate all design"""
+        self.migrate_teams_design()
+        self.migrate_metrics_design()
+        self.migrate_actions_design()
+        self.migrate_leaderboards_design()
