@@ -22,6 +22,9 @@ class Constant(object):
 
     VERSION = "latest"
     TOTAL = "total"
+    PLAYER_ID = "atomasse"
+    BIG_NUMBER = 10 ** 10
+    CYCLE = "alltime"
 
     ADMIN_ROOT = "/admin/"
     ADMIN_PLAYERS = "/admin/players/"
@@ -33,6 +36,7 @@ class Constant(object):
     DESIGN_LEADERBOARDS = "/design/versions/" + VERSION + "/leaderboards/"
 
     RUNTIME_ACTION = "/runtime/actions/"
+    RUNTIME_LEADERBOARDS = "/runtime/leaderboards/"
 
 
 class Utility(object):
@@ -363,6 +367,24 @@ class GetPlayoffData(object):
             return []
 
         return player_feed
+
+    def get_leaderboard(self, leaderboard_id):
+        """Return chosen leaderboard
+
+        :param str leaderboard_id: chosen leaderboard
+        :raise: ParameterException: when parameter is empty
+        """
+        if not leaderboard_id:
+            raise ParameterException("Parameter can't be empty")
+
+        data = {
+            "player_id": Constant.PLAYER_ID,
+            "cycle": Constant.CYCLE,
+            "limit": Constant.BIG_NUMBER
+        }
+
+        return self.game.get(Constant.RUNTIME_LEADERBOARDS + leaderboard_id,
+                             data)
 
 
 class PostPlayoffData(object):

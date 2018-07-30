@@ -619,6 +619,7 @@ class PlayoffMigration(object):
     # ++++++++++++++++++++++++
     # SCOPED METHODS
 
+    #
     def migrate_scoped_leaderboards_design(self, game: Games):
         """Migrates scoped leaderboards design from original game to
         cloned one
@@ -629,8 +630,8 @@ class PlayoffMigration(object):
         leaderboards_id = self.get_leaderboards_design_by_id(Games.original)
 
         for id_lead in leaderboards_id:
-            single_design_lead = self.get_single_leaderboard_design\
-                (Games.original, id_lead)
+            single_design_lead = self.get_single_leaderboard_design(
+                Games.original, id_lead)
 
             boards_single_design_info = {
                 "id": single_design_lead['id'],
@@ -643,6 +644,7 @@ class PlayoffMigration(object):
             self.__get_game(game).post("/design/versions/latest/leaderboards",
                                        {}, boards_single_design_info)
 
+    #
     def migrate_scoped_players_feed(self, game: Games):
         """Migrates scoped players feed from original game to cloned one"""
         self._logger.info(self.migrate_scoped_players_feed.__name__ +
@@ -679,6 +681,7 @@ class PlayoffMigration(object):
                                                {"variables": variables,
                                                 "scopes": scopes})
 
+    # per ereditarietà
     def migrate_all_design_scoped(self, game: Games):
         """Migrates all design from original game to the cloned ones"""
         self._logger.info("Migrating design...")
@@ -690,6 +693,7 @@ class PlayoffMigration(object):
 
         self._logger.info("Migrating design finished")
 
+    # per ereditarietà
     def migrate_all_istances_scoped(self, game: Games):
         """Migrates all istances from original game to the cloned ones"""
         self._logger.info("Migrating instances...")
@@ -701,6 +705,7 @@ class PlayoffMigration(object):
 
         self._logger.info("Migrating instances finished")
 
+    #
     def get_globale_scopes(self, player_id, action_id):
         return [{
                     "id": "globale_creativita",
@@ -723,6 +728,7 @@ class PlayoffMigration(object):
                     "entity_id": player_id
                 }]
 
+    #
     def get_lab_somma_scopes(self, player_id):
         return [{
                     "id": "tra_team_creativita",
@@ -741,6 +747,8 @@ class PlayoffMigration(object):
                     "entity_id": player_id
                 }]
 
+    # non aggiunta perché non utile, se qualcuno vuole una leaderboard scoped
+    # sa che deve aggiungere lo scope
     def get_scoped_leaderboard(self, game: Games, leaderboard_id):
         game_instance = self.__get_game(game)
 
@@ -754,6 +762,7 @@ class PlayoffMigration(object):
         return game_instance.get("/runtime/leaderboards/" + leaderboard_id,
                                  data)
 
+    #
     def get_leaderboard(self, game: Games, leaderboard_id):
         game_instance = self.__get_game(game)
 
