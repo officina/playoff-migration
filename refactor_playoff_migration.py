@@ -61,6 +61,11 @@ class Utility(object):
 
         return division_res if number % 100 == 0 else division_res + 1
 
+    @staticmethod
+    def raise_empty_parameter_exception(parameter):
+        if not parameter:
+            raise ParameterException("Parameter can't be empty")
+
 
 # =======================
 # DESIGN MANIPULATION CLASS
@@ -84,6 +89,8 @@ class GetPlayoffDesign(object):
 
         :param str team_id: id of the team
         """
+        Utility.raise_empty_parameter_exception(team_id)
+
         return self.game.get(Constant.DESIGN_TEAMS + team_id, {})
 
     def get_metrics_design(self):
@@ -95,6 +102,8 @@ class GetPlayoffDesign(object):
 
         :param str metric_id: id of metric
         """
+        Utility.raise_empty_parameter_exception(metric_id)
+
         return self.game.get(Constant.DESIGN_METRICS + metric_id, {})
 
     def get_actions_design(self):
@@ -106,6 +115,8 @@ class GetPlayoffDesign(object):
 
         :param str action_id: id of action
         """
+        Utility.raise_empty_parameter_exception(action_id)
+
         return self.game.get(Constant.DESIGN_ACTIONS + action_id, {})
 
     def get_leaderboards_design(self):
@@ -117,6 +128,8 @@ class GetPlayoffDesign(object):
 
         :param str leaderboard_id: id of leaderboard
         """
+        Utility.raise_empty_parameter_exception(leaderboard_id)
+
         return self.game.get(Constant.DESIGN_LEADERBOARDS + leaderboard_id, {})
 
 

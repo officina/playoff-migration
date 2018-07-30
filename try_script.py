@@ -24,6 +24,6 @@ gp = GetPlayoffData(playoff_client)
 gp_design = GetPlayoffDesign(playoff_client)
 pm = PlayoffMigration()
 
-team_design = gp_design.get_single_team_design("laboratorio")
+var = gp_design.get_single_action_design("sfida_circle_the_dot")
 
-pprint(team_design)
+pprint(var)
