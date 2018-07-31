@@ -20,10 +20,9 @@ playoff_client = Playoff(
 team_id = "globale"
 player_id = "agazzani"
 
-gp = GetPlayoffData(playoff_client)
-gp_design = GetPlayoffDesign(playoff_client)
-pm = PlayoffMigration()
+data_getter = GetPlayoffData(playoff_client)
+design_getter = GetPlayoffDesign(playoff_client)
 
-var = gp_design.get_single_action_design("sfida_circle_the_dot")
+var = data_getter.get_player_feed(player_id)
 
 pprint(var)

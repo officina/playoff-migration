@@ -534,7 +534,6 @@ class DeleteAll(DeletePlayoffDesign, DeletePlayoffData):
 # MIGRATION CLASS
 # =======================
 
-
 class PlayoffMigrationData(object):
     """Class that make a migration of data from a Playoff game to an other"""
 

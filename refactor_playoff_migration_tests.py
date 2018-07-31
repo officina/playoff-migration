@@ -304,10 +304,7 @@ class PostDeletePlayoffDesignTest(unittest.TestCase):
                           leaderboard_id)
 
 
-# arrivato qui
 class GetPlayoffDataTest(unittest.TestCase):
-
-    gp: GetPlayoffData
 
     def setUp(self):
         from pathlib import Path
@@ -320,14 +317,14 @@ class GetPlayoffDataTest(unittest.TestCase):
             allow_unsecure=True
         )
 
-        self.gp = GetPlayoffData(playoff_client)
+        self.data_getter = GetPlayoffData(playoff_client)
 
     def test_count_method(self):
         team_id = "globale"
 
-        team_instances_count = self.gp.get_team_count()
-        players_count = self.gp.get_players_count()
-        players_count_team = self.gp.get_players_count_in_team(team_id)
+        team_instances_count = self.data_getter.get_team_count()
+        players_count = self.data_getter.get_players_count()
+        players_count_team = self.data_getter.get_players_count_in_team(team_id)
 
         self.assertTrue(isinstance(team_instances_count, int))
         self.assertTrue(isinstance(players_count, int))
@@ -335,13 +332,11 @@ class GetPlayoffDataTest(unittest.TestCase):
         self.assertTrue(team_instances_count >= 0)
         self.assertTrue(players_count >= 0)
         self.assertTrue(players_count_team >= 0)
-        self.assertRaises(ParameterException,
-                          self.gp.get_players_count_in_team, '')
 
     def test_info_by_id(self):
-        teams_by_id = self.gp.get_teams_by_id()
-        players_by_id = self.gp.get_players_by_id()
-        game_id = self.gp.get_game_id()
+        teams_by_id = self.data_getter.get_teams_by_id()
+        players_by_id = self.data_getter.get_players_by_id()
+        game_id = self.data_getter.get_game_id()
 
         self.assertTrue(isinstance(teams_by_id, list))
         self.assertTrue(isinstance(players_by_id, list))
@@ -351,9 +346,8 @@ class GetPlayoffDataTest(unittest.TestCase):
         team_id = "globale"
         team_info_keys = ['id', 'name', 'definition', 'roles']
 
-        team_info = self.gp.get_team_info(team_id)
+        team_info = self.data_getter.get_team_info(team_id)
 
-        self.assertRaises(ParameterException, self.gp.get_team_info, '')
         self.assertTrue(isinstance(team_info, dict))
 
         for key in team_info_keys:
@@ -363,9 +357,8 @@ class GetPlayoffDataTest(unittest.TestCase):
         player_id = "agazzani"
         player_info_keys = ['alias', 'id', 'teams']
 
-        player_info = self.gp.get_player_profile(player_id)
+        player_info = self.data_getter.get_player_profile(player_id)
 
-        self.assertRaises(ParameterException, self.gp.get_player_profile, '')
         self.assertTrue(isinstance(player_info, dict))
 
         for key in player_info_keys:
@@ -376,10 +369,9 @@ class GetPlayoffDataTest(unittest.TestCase):
         player2 = "utente01"  # player with no feed
         player_feed_keys = ["event", "id", "timestamp"]
 
-        player1_feed = self.gp.get_player_feed(player1)
-        player2_feed = self.gp.get_player_feed(player2)
+        player1_feed = self.data_getter.get_player_feed(player1)
+        player2_feed = self.data_getter.get_player_feed(player2)
 
-        self.assertRaises(ParameterException, self.gp.get_player_feed, '')
         self.assertTrue(isinstance(player1_feed, list))
         self.assertTrue(isinstance(player2_feed, list))
 
@@ -387,58 +379,169 @@ class GetPlayoffDataTest(unittest.TestCase):
             for key in player_feed_keys:
                 self.assertTrue(key in feed.keys())
 
+    def test_leaderboard(self):
+        leaderboard_id = "globale_punti"
+        leaderboard_keys = ["data", "total"]
 
-class PostPlayoffDataTest(unittest.TestCase):
-    pp: PostPlayoffData
-    pg: GetPlayoffData
+        leaderboard_data = self.data_getter.get_leaderboard(leaderboard_id)
+
+        self.assertTrue(isinstance(leaderboard_data, dict))
+
+        for key in leaderboard_keys:
+            self.assertTrue(key in leaderboard_data.keys())
+
+
+class PostDeletePlayoffDataTest(unittest.TestCase):
 
     def setUp(self):
         from pathlib import Path
         env_path = Path('.') / '.env'
         load_dotenv(dotenv_path=env_path)
         playoff_client = Playoff(
-            client_id=os.environ["API_TEST_GAME_CLIENT_ID"],
-            client_secret=os.environ["API_TEST_GAME_CLIENT_SECRET"],
+            client_id=os.environ["GAMELABCLONSCOPED2_CLIENT_ID"],
+            client_secret=os.environ["GAMELABCLONSCOPED2_CLIENT_SECRET"],
             type='client',
             allow_unsecure=True
         )
 
-        self.pp = PostPlayoffData(playoff_client)
-        self.pg = GetPlayoffData(playoff_client)
+        self.data_deleter = DeletePlayoffData(playoff_client)
+        self.data_poster = PostPlayoffData(playoff_client)
+        self.data_getter = GetPlayoffData(playoff_client)
 
     def test_create_team(self):
-        """Test creation of a team
+        # this team design must exists in the game
+        existing_team_design = "globale"
 
-        In order to properly test it, you need a team design, this is
-        why thi method create a design first
-        """
-        # crea un design
-
-        void_data = {}
-
-        self.assertRaises(ParameterException, self.pp.create_team, void_data)
+        team_id = "test_team"
 
         valid_data = {
-            "id": "test_team",
+            "id": team_id,
             "name": "TestTeam",
-            "access": ""
+            "access": "PUBLIC",
+            "definition": existing_team_design
         }
 
-        # creo un blocco di dati accettabili
-        # testo se viene creato il team
-        # prima della creazione conto il numero di team che ci sono
-        # faccio la creazione
-        # conto il numero di team dopo la creazione
-        pass
+        self.assertRaises(PlayoffException, self.data_getter.get_team_info,
+                          team_id)
 
+        old_count = self.data_getter.get_team_count()
 
-class DeletePlayoffDataTest(unittest.TestCase):
-    pass
+        self.data_poster.create_team(valid_data)
 
+        new_count = self.data_getter.get_team_count()
 
-class PlayoffMigrationDataTest(unittest.TestCase):
-    pass
+        self.assertEqual(old_count, new_count - 1)
 
+        team_data = self.data_getter.get_team_info(team_id)
 
-class PlayoffMigrationDesignTest(unittest.TestCase):
-    pass
+        self.assertEqual(team_data["id"], team_id)
+
+        self.data_deleter.delete_single_team(team_id)
+
+        new_count = self.data_getter.get_team_count()
+
+        self.assertRaises(PlayoffException, self.data_getter.get_team_info,
+                          team_id)
+        self.assertEqual(old_count, new_count)
+
+    def test_create_player(self):
+        player_id = "player_nuovo"
+
+        self.assertRaises(PlayoffException,
+                          self.data_getter.get_player_profile, player_id)
+
+        player_data = {
+            "id": player_id,
+            "alias": "Player Nuovo"
+        }
+
+        old_count = self.data_getter.get_players_count()
+
+        self.data_poster.create_player(player_data)
+
+        new_count = self.data_getter.get_players_count()
+
+        self.assertEqual(old_count, new_count - 1)
+
+        self.data_deleter.delete_single_player(player_id)
+
+        new_count = self.data_getter.get_players_count()
+
+        self.assertEqual(old_count, new_count)
+
+        self.assertRaises(PlayoffException,
+                          self.data_getter.get_player_profile, player_id)
+
+    def test_join_team(self):
+        player_id = "player_nuovo"
+        team_id = "globale"
+
+        player_data = {
+            "id": player_id,
+            "alias": "Player Nuovo"
+        }
+
+        self.data_poster.create_player(player_data)
+
+        player_profile = self.data_getter.get_player_profile(player_id)
+
+        self.assertTrue(not player_profile["teams"])
+
+        valid_data = {
+                "requested_roles": {
+                    "Giocatore": True
+                },
+                "player_id": player_id
+            }
+
+        old_count = self.data_getter.get_players_count_in_team(team_id)
+
+        self.data_poster.join_team(team_id, valid_data)
+
+        new_count = self.data_getter.get_players_count_in_team(team_id)
+
+        self.assertEqual(old_count, new_count - 1)
+
+        self.data_deleter.delete_single_player(player_id)
+
+        new_count = self.data_getter.get_players_count_in_team(team_id)
+
+        self.assertEqual(old_count, new_count)
+
+    def test_take_an_action(self):
+        # this action design must exists in the game
+        action_id = "sfida_circle_the_dot"
+
+        player_id = "player_nuovo"
+
+        player_data = {
+            "id": player_id,
+            "alias": "Player Nuovo"
+        }
+
+        self.data_poster.create_player(player_data)
+
+        valid_data = {
+            "variables": {
+                'livello': 0,
+                'punteggio': 100,
+                'punteggioMedio': 100,
+                'tentativi': 1
+            },
+            "scopes": []
+        }
+
+        player_feed = self.data_getter.get_player_feed(player_id)
+
+        old_count = len(player_feed)
+
+        self.data_poster.take_action(action_id, {"player_id": player_id},
+                                     valid_data)
+
+        player_feed = self.data_getter.get_player_feed(player_id)
+
+        new_count = len(player_feed)
+
+        self.assertEqual(old_count, new_count - 1)
+
+        self.data_deleter.delete_single_player(player_id)
