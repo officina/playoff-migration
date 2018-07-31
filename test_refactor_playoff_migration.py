@@ -1,5 +1,4 @@
 import unittest
-import os
 
 from refactor_playoff_migration import *
 

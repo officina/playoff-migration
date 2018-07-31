@@ -62,9 +62,10 @@ class Utility(object):
         return division_res if number % 100 == 0 else division_res + 1
 
     @staticmethod
-    def raise_empty_parameter_exception(parameter):
-        if not parameter:
-            raise ParameterException("Parameter can't be empty")
+    def raise_empty_parameter_exception(parameters):
+        for par in parameters:
+            if not par:
+                raise ParameterException("Parameter can't be empty")
 
 
 # =======================
@@ -89,7 +90,7 @@ class GetPlayoffDesign(object):
 
         :param str team_id: id of the team
         """
-        Utility.raise_empty_parameter_exception(team_id)
+        Utility.raise_empty_parameter_exception([team_id])
 
         return self.game.get(Constant.DESIGN_TEAMS + team_id, {})
 
@@ -102,7 +103,7 @@ class GetPlayoffDesign(object):
 
         :param str metric_id: id of metric
         """
-        Utility.raise_empty_parameter_exception(metric_id)
+        Utility.raise_empty_parameter_exception([metric_id])
 
         return self.game.get(Constant.DESIGN_METRICS + metric_id, {})
 
@@ -115,12 +116,12 @@ class GetPlayoffDesign(object):
 
         :param str action_id: id of action
         """
-        Utility.raise_empty_parameter_exception(action_id)
+        Utility.raise_empty_parameter_exception([action_id])
 
         return self.game.get(Constant.DESIGN_ACTIONS + action_id, {})
 
     def get_leaderboards_design(self):
-        """Return a list containing all leaderboards design"""
+        """Return a list of dict containing leaderboards design id and name"""
         return self.game.get(Constant.DESIGN_LEADERBOARDS, {})
 
     def get_single_leaderboard_design(self, leaderboard_id):
@@ -128,7 +129,7 @@ class GetPlayoffDesign(object):
 
         :param str leaderboard_id: id of leaderboard
         """
-        Utility.raise_empty_parameter_exception(leaderboard_id)
+        Utility.raise_empty_parameter_exception([leaderboard_id])
 
         return self.game.get(Constant.DESIGN_LEADERBOARDS + leaderboard_id, {})
 
@@ -146,8 +147,7 @@ class PostPlayoffDesign(object):
         :param dict design_data: info necessary to create a team design
         :raise ParameterException: if parameter is empty
         """
-        if not design_data:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([design_data])
 
         self.game.post(Constant.DESIGN_TEAMS, {}, design_data)
 
@@ -157,8 +157,7 @@ class PostPlayoffDesign(object):
         :param dict design_data: info necessary to create a metric design
         :raise ParameterException: if parameter is empty
         """
-        if not design_data:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([design_data])
 
         self.game.post(Constant.DESIGN_METRICS, {}, design_data)
 
@@ -168,8 +167,7 @@ class PostPlayoffDesign(object):
         :param dict design_data: info necessary to create an action design
         :raise ParameterException: if parameter is empty
         """
-        if not design_data:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([design_data])
 
         self.game.post(Constant.DESIGN_ACTIONS, {}, design_data)
 
@@ -179,8 +177,7 @@ class PostPlayoffDesign(object):
         :param dict design_data: info necessary to create an leaderboard design
         :raise ParameterException: if parameter is empty
         """
-        if not design_data:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([design_data])
 
         self.game.post(Constant.DESIGN_LEADERBOARDS, {}, design_data)
 
@@ -200,8 +197,7 @@ class DeletePlayoffDesign(object):
         :param str team_id: team id to delete
         :raise ParameterException: if parameter is empty
         """
-        if not team_id:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([team_id])
 
         self.game.delete(Constant.DESIGN_TEAMS + team_id, {})
 
@@ -211,8 +207,7 @@ class DeletePlayoffDesign(object):
         :param str metric_id: team id to delete
         :raise ParameterException: if parameter is empty
         """
-        if not metric_id:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([metric_id])
 
         self.game.delete(Constant.DESIGN_METRICS + metric_id, {})
 
@@ -222,8 +217,7 @@ class DeletePlayoffDesign(object):
         :param str action_id: team id to delete
         :raise ParameterException: if parameter is empty
         """
-        if not action_id:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([action_id])
 
         self.game.delete(Constant.DESIGN_ACTIONS + action_id, {})
 
@@ -233,8 +227,7 @@ class DeletePlayoffDesign(object):
         :param str leaderboard_id: team id to delete
         :raise ParameterException: if parameter is empty
         """
-        if not leaderboard_id:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([leaderboard_id])
 
         self.game.delete(Constant.DESIGN_LEADERBOARDS + leaderboard_id, {})
 
@@ -297,8 +290,7 @@ class GetPlayoffData(object):
         :param str team_id: containing id of a team
         :raise ParameterException: if parameter is empty
         """
-        if not team_id:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([team_id])
 
         return self.game.get(Constant.ADMIN_TEAMS + team_id +
                              '/members', {})[Constant.TOTAL]
@@ -333,8 +325,7 @@ class GetPlayoffData(object):
         :param str team_id: containing id of a team
         :raise ParameterException: if parameter is empty
         """
-        if not team_id:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([team_id])
 
         return self.game.get(Constant.ADMIN_TEAMS + team_id, {})
 
@@ -359,8 +350,7 @@ class GetPlayoffData(object):
         :param str player_id: containing id of a player
         :raise ParameterException: if parameter is empty
         """
-        if not player_id:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([player_id])
 
         return self.game.get(Constant.ADMIN_PLAYERS + player_id, {})
 
@@ -370,8 +360,7 @@ class GetPlayoffData(object):
         :param str player_id: player id
         :raise ParameterException: if parameter is empty
         """
-        if not player_id:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([player_id])
 
         player_feed = self.game.get(Constant.ADMIN_PLAYERS + player_id +
                                     "/activity", {"start": "0"})
@@ -387,8 +376,7 @@ class GetPlayoffData(object):
         :param str leaderboard_id: chosen leaderboard
         :raise: ParameterException: when parameter is empty
         """
-        if not leaderboard_id:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([leaderboard_id])
 
         data = {
             "player_id": Constant.PLAYER_ID,
@@ -414,8 +402,7 @@ class PostPlayoffData(object):
         :param dict team_data: team info necessary to create a team
         :raise ParameterException: if parameter is empty
         """
-        if not team_data:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([team_data])
 
         self.game.post(Constant.ADMIN_TEAMS, {}, team_data)
 
@@ -425,8 +412,7 @@ class PostPlayoffData(object):
         :param dict player_data: player info necessary to create a player
         :raise ParameterException: if parameter is empty
         """
-        if not player_data:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([player_data])
 
         self.game.post(Constant.ADMIN_PLAYERS, {}, player_data)
 
@@ -437,8 +423,7 @@ class PostPlayoffData(object):
         :param dict data: data necessary to join a team
         :raise ParameterException: if a parameter is empty
         """
-        if not team_id or not data:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([team_id, data])
 
         self.game.post(Constant.ADMIN_TEAMS + team_id + "/join", {}, data)
 
@@ -450,8 +435,7 @@ class PostPlayoffData(object):
         :param dict data: data necessary to take action
         :raise ParameterException: if a parameter is empty
         """
-        if not action_id or not player_id or not data:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([action_id, player_id, data])
 
         self.game.post(Constant.RUNTIME_ACTION + action_id + "/play",
                        player_id, data)
@@ -472,8 +456,7 @@ class DeletePlayoffData(object):
         :param str team_id: team id to destroy
         :raise ParameterException: if parameter is empty
         """
-        if not team_id:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([team_id])
 
         self.game.delete(Constant.ADMIN_TEAMS + team_id, {})
 
@@ -483,8 +466,7 @@ class DeletePlayoffData(object):
         :param str player_id: player id to destroy
         :raise ParameterException: if parameter is empty
         """
-        if not player_id:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([player_id])
 
         self.game.delete(Constant.ADMIN_PLAYERS + player_id, {})
 
@@ -542,23 +524,23 @@ class PlayoffMigrationData(object):
         env_path = Path('.') / '.env'
         load_dotenv(dotenv_path=env_path)
 
-        self.original = Playoff(
+        original = Playoff(
             client_id=os.environ["GAMELABNOTARGETV01_CLIENT_ID"],
             client_secret=os.environ["GAMELABNOTARGETV01_CLIENT_SECRET"],
             type='client',
             allow_unsecure=True
         )
 
-        self.to_clone = Playoff(
+        to_clone = Playoff(
             client_id=os.environ["GAMELABCLONSCOPED2_CLIENT_ID"],
             client_secret=os.environ["GAMELABCLONSCOPED2_CLIENT_SECRET"],
             type='client',
             allow_unsecure=True
         )
 
-        self.data_getter = GetPlayoffData(self.original)
-        self.data_destroyer = DeletePlayoffData(self.to_clone)
-        self.data_creator = PostPlayoffData(self.to_clone)
+        self.data_getter = GetPlayoffData(original)
+        self.data_destroyer = DeletePlayoffData(to_clone)
+        self.data_creator = PostPlayoffData(to_clone)
 
     def migrate_teams(self):
         """Migrate teams"""
@@ -601,8 +583,7 @@ class PlayoffMigrationData(object):
         :param dict player_data: player profile data
         :raise ParameterException: if a parameter is empty
         """
-        if not player_data:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([player_data])
 
         creation_data = {
             "id": player_data["id"],
@@ -617,8 +598,7 @@ class PlayoffMigrationData(object):
         :param dict player_data: player profile data
         :raise ParameterException: if a parameter is empty
         """
-        if not player_data:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([player_data])
 
         for team in player_data["teams"]:
             data = {
@@ -637,8 +617,7 @@ class PlayoffMigrationData(object):
         :param dict player_feed: player feed
         :raise ParameterException: if a parameter is empty
         """
-        if not player_id or not player_feed:
-            raise ParameterException("Parameter can't be empty")
+        Utility.raise_empty_parameter_exception([player_id, player_feed])
 
         for feed in player_feed:
             if feed["event"] == ["action"]:
@@ -664,23 +643,23 @@ class PlayoffMigrationDesign(object):
         env_path = Path('.') / '.env'
         load_dotenv(dotenv_path=env_path)
 
-        self.original = Playoff(
+        original = Playoff(
             client_id=os.environ["GAMELABNOTARGETV01_CLIENT_ID"],
             client_secret=os.environ["GAMELABNOTARGETV01_CLIENT_SECRET"],
             type='client',
             allow_unsecure=True
         )
 
-        self.to_clone = Playoff(
+        to_clone = Playoff(
             client_id=os.environ["GAMELABCLONSCOPED2_CLIENT_ID"],
             client_secret=os.environ["GAMELABCLONSCOPED2_CLIENT_SECRET"],
             type='client',
             allow_unsecure=True
         )
 
-        self.design_getter = GetPlayoffDesign(self.original)
-        self.design_destroyer = DeletePlayoffDesign(self.to_clone)
-        self.design_creator = PostPlayoffDesign(self.to_clone)
+        self.design_getter = GetPlayoffDesign(original)
+        self.design_destroyer = DeletePlayoffDesign(to_clone)
+        self.design_creator = PostPlayoffDesign(to_clone)
 
     def migrate_teams_design(self):
         """Migrate teams design"""

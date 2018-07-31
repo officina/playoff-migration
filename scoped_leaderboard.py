@@ -1,5 +1,5 @@
 from refactor_playoff_migration import ParameterException, \
-    PlayoffMigrationDesign, PlayoffMigrationData
+    PlayoffMigrationDesign, PlayoffMigrationData, Utility
 
 # =======================
 # UTILITY CLASS
@@ -9,7 +9,7 @@ from refactor_playoff_migration import ParameterException, \
 # TODO: ho preferito fare una sola classe utilità e non dividerla in
 # due come su refactor_playoff_migration perché è più piccola, vale come
 # motivo?
-class Utility(object):
+class ScopedUtility(Utility):
     """Class that define methods or constants useful for the other class"""
 
     ACTION_LEADERBOARD_PARSER = {
@@ -73,7 +73,7 @@ class Utility(object):
                     "entity_id": player_id
                 },
                 {
-                    "id": Utility.ACTION_LEADERBOARD_PARSER[action_id],
+                    "id": ScopedUtility.ACTION_LEADERBOARD_PARSER[action_id],
                     "entity_id": player_id
                 }]
 
@@ -111,7 +111,9 @@ class ScopedLeaderboard(PlayoffMigrationDesign, PlayoffMigrationData):
     """
 
     def __init__(self):
-        super(ScopedLeaderboard, self).__init__()
+        # super().__init__()
+        PlayoffMigrationDesign.__init__(self)
+        PlayoffMigrationData.__init__(self)
 
     def migrate_leaderboards_design(self):
         """Migrate scoped leaderboards design"""
@@ -121,7 +123,7 @@ class ScopedLeaderboard(PlayoffMigrationDesign, PlayoffMigrationData):
 
         for leaderboard in leaderboards_id:
             single_design = self.design_getter.get_single_leaderboard_design(
-                leaderboard)
+                leaderboard['id'])
 
             data = {
                 "id": single_design['id'],
@@ -140,25 +142,25 @@ class ScopedLeaderboard(PlayoffMigrationDesign, PlayoffMigrationData):
         :param dict player_feed: player feed
         :raise ParameterException: if a parameter is empty
         """
-        if not player_id or not player_feed:
-            raise ParameterException("Parameter can't be empty")
+        ScopedUtility.raise_empty_parameter_exception([player_id, player_feed])
 
-        player_data = self.data_getter.get_player_profile(player_id)
+        player_data = self.data_getter.get_player_profile(
+            player_id['player_id'])
         player_teams = player_data['teams']
 
         for feed in player_feed:
-            if feed["event"] == ["action"]:
+            if feed["event"] == "action":
                 action_id = feed['action']['id']
                 variables = feed['action']['vars']
                 scopes = {}
 
                 for team in player_teams:
                     if team["id"] == "globale":
-                        scopes = Utility.get_globale_scopes(
+                        scopes = ScopedUtility.get_globale_scopes(
                             player_id['player_id'], action_id)
                         break
-                    elif team["id"] == "laboratorio_somma":
-                        scopes = Utility.get_lab_somma_scopes(
+                    elif team["id"] == "community_somma":
+                        scopes = ScopedUtility.get_lab_somma_scopes(
                             player_id['player_id'])
                         break
 

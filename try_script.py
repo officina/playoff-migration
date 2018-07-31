@@ -3,10 +3,12 @@ from dotenv import load_dotenv
 import os
 from pathlib import Path
 
-from refactor_playoff_migration import GetPlayoffData, GetPlayoffDesign
+from refactor_playoff_migration import *
+from scoped_leaderboard import ScopedLeaderboard
 from playoff_migration import PlayoffMigration, Games
 
 from playoff import Playoff
+
 
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
@@ -17,12 +19,19 @@ playoff_client = Playoff(
     allow_unsecure=True
 )
 
-team_id = "globale"
-player_id = "agazzani"
+playoff_client2 = Playoff(
+    client_id=os.environ["GAMELABCLONSCOPED2_CLIENT_ID"],
+    client_secret=os.environ["GAMELABCLONSCOPED2_CLIENT_SECRET"],
+    type='client',
+    allow_unsecure=True
+)
 
-data_getter = GetPlayoffData(playoff_client)
 design_getter = GetPlayoffDesign(playoff_client)
 
-var = data_getter.get_player_feed(player_id)
+team_design = design_getter.get_single_team_design("globale")
 
-pprint(var)
+pprint(team_design)
+
+team_design2 = design_getter.get_single_team_design("")
+
+pprint(team_design2)
