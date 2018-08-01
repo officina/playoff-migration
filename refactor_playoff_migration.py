@@ -1,4 +1,5 @@
 import os
+from pprint import pprint
 
 from playoff import Playoff
 from dotenv import load_dotenv
@@ -561,22 +562,6 @@ class PlayoffMigrationData(object):
 
             self.data_creator.create_team(creation_data)
 
-    def migrate_players(self):
-        """Migrate players"""
-
-        self.data_destroyer.delete_players()
-
-        players_by_id = self.data_getter.get_players_by_id()
-
-        for player in players_by_id:
-            player_data = self.data_getter.get_player_profile(player)
-            player_feed = self.data_getter.get_player_feed(player)
-            player_id = {"player_id": player}
-
-            self.migrate_player_data(player_data)
-            self.migrate_player_in_teams(player_data)
-            self.migrate_player_feed(player_id, player_feed)
-
     def migrate_player_data(self, player_data):
         """Migrate players profile data
 
@@ -614,13 +599,13 @@ class PlayoffMigrationData(object):
         """Migrate player feed
 
         :param dict player_id: player id in dict format
-        :param dict player_feed: player feed
-        :raise ParameterException: if a parameter is empty
+        :param dict player_feed: player feed (can be empty)
+        :raise ParameterException: if player_id is empty
         """
-        Utility.raise_empty_parameter_exception([player_id, player_feed])
+        Utility.raise_empty_parameter_exception([player_id])
 
         for feed in player_feed:
-            if feed["event"] == ["action"]:
+            if feed["event"] == "action":
                 action_id = feed['action']['id']
                 data = {
                     "variables": feed['action']['vars'],
@@ -628,6 +613,22 @@ class PlayoffMigrationData(object):
                 }
 
                 self.data_creator.take_action(action_id, player_id, data)
+
+    def migrate_players(self):
+        """Migrate players"""
+
+        self.data_destroyer.delete_players()
+
+        players_by_id = self.data_getter.get_players_by_id()
+
+        for player in players_by_id:
+            player_data = self.data_getter.get_player_profile(player)
+            player_feed = self.data_getter.get_player_feed(player)
+            player_id = {"player_id": player}
+
+            self.migrate_player_data(player_data)
+            self.migrate_player_in_teams(player_data)
+            self.migrate_player_feed(player_id, player_feed)
 
     def migrate_all_data(self):
         """Migrate all data"""
@@ -679,6 +680,9 @@ class PlayoffMigrationDesign(object):
                 '_hues': design_team['_hues']
             }
 
+            if 'description' in design_team.keys():
+                team_data.update({'description': design_team['description']})
+
             self.design_creator.create_team_design(team_data)
 
     def migrate_metrics_design(self):
@@ -698,6 +702,10 @@ class PlayoffMigrationDesign(object):
                 "constraints": design_metric['constraints']
             }
 
+            if "description" in design_metric.keys():
+                metric_data.update({"description":
+                                    design_metric["description"]})
+
             self.design_creator.create_metric_design(metric_data)
 
     def migrate_actions_design(self):
@@ -715,8 +723,13 @@ class PlayoffMigrationDesign(object):
                 "name": design_action['name'],
                 "requires": design_action['requires'],
                 "rules": design_action['rules'],
-                "variables": design_action['variables']
+                "variables": design_action['variables'],
+                "image": design_action['image']
             }
+
+            if "description" in design_action.keys():
+                action_data.update({"description":
+                                    design_action["description"]})
 
             self.design_creator.create_action_design(action_data)
 
@@ -735,10 +748,11 @@ class PlayoffMigrationDesign(object):
                 "name": design_leaderboard['name'],
                 "entity_type": design_leaderboard['entity_type'],
                 "scope": design_leaderboard['scope'],
-                "metric": design_leaderboard['metric']
+                "metric": design_leaderboard['metric'],
+                "cycles": design_leaderboard['cycles']
             }
 
-            self.design_creator.create_team_design(leaderboard_data)
+            self.design_creator.create_leaderboard_design(leaderboard_data)
 
     def migrate_all_design(self):
         """Migrate all design"""

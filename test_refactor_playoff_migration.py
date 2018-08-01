@@ -1,4 +1,5 @@
 import unittest
+from pprint import pprint
 
 from refactor_playoff_migration import *
 
@@ -544,3 +545,184 @@ class PostDeletePlayoffDataTest(unittest.TestCase):
         self.assertEqual(old_count, new_count - 1)
 
         self.data_deleter.delete_single_player(player_id)
+
+
+class MigrationDataTest(unittest.TestCase):
+
+    def setUp(self):
+        from pathlib import Path
+        env_path = Path('.') / '.env'
+        load_dotenv(dotenv_path=env_path)
+
+        original = Playoff(
+            client_id=os.environ["GAMELABCLONSCOPED2_CLIENT_ID"],
+            client_secret=os.environ["GAMELABCLONSCOPED2_CLIENT_SECRET"],
+            type='client',
+            allow_unsecure=True
+        )
+
+        self.migrate_data = PlayoffMigrationData()
+        self.data_getter_cloned = GetPlayoffData(original)
+
+    def test1_teams_migration(self):
+        origin_teams_id = self.migrate_data.data_getter.get_teams_by_id()
+
+        self.migrate_data.migrate_teams()
+
+        cloned_teams_id = self.data_getter_cloned.get_teams_by_id()
+
+        self.assertEqual(len(origin_teams_id), len(cloned_teams_id))
+        self.assertEqual(origin_teams_id, cloned_teams_id)
+
+    def test2_players_migration(self):
+        self.migrate_data.data_destroyer.delete_players()
+
+        origin_players_id = self.migrate_data.data_getter.get_players_by_id()
+
+        for player in origin_players_id:
+            player_data = self.migrate_data.data_getter.get_player_profile(
+                player)
+
+            player_feed = self.migrate_data.data_getter.get_player_feed(player)
+            player_id = {"player_id": player}
+
+            self.migrate_data.migrate_player_data(player_data)
+
+            cloned_players_id = self.data_getter_cloned.get_players_by_id()
+
+            self.assertTrue(player in cloned_players_id)
+
+            origin_player_teams = player_data['teams']
+
+            self.migrate_data.migrate_player_in_teams(player_data)
+
+            cloned_player_data = self.data_getter_cloned.get_player_profile(
+                player)
+            cloned_player_teams = cloned_player_data['teams']
+
+            self.assertEqual(origin_player_teams, cloned_player_teams)
+
+            self.migrate_data.migrate_player_feed(player_id, player_feed)
+
+            """
+            Problema nel testare i feed clonati
+            1) non posso controllare il numero in quanto prendo solo i feed con
+                campo ['event'] == 'action'
+            2) non posso controllare che le feed siano le stesse in quanto 
+                l'ordine non è lo stesso
+            3) non riesco a controllare i punteggi, in quanto alcuni
+            
+            cloned_player_data = self.data_getter_cloned.get_player_profile(
+                player)
+            self.assertEqual(player_data['scores'], 
+                             cloned_player_data['scores'])
+            """
+
+        cloned_players_id = self.data_getter_cloned.get_players_by_id()
+
+        self.assertEqual(origin_players_id, cloned_players_id)
+
+
+class MigrationDesignTest(unittest.TestCase):
+
+    def setUp(self):
+        from pathlib import Path
+        env_path = Path('.') / '.env'
+        load_dotenv(dotenv_path=env_path)
+
+        to_clone = Playoff(
+            client_id=os.environ["GAMELABCLONSCOPED2_CLIENT_ID"],
+            client_secret=os.environ["GAMELABCLONSCOPED2_CLIENT_SECRET"],
+            type='client',
+            allow_unsecure=True
+        )
+
+        self.migrate_design = PlayoffMigrationDesign()
+        self.design_getter = GetPlayoffDesign(to_clone)
+
+    def test1_teams_design_migration(self):
+        origin_teams_de = self.migrate_design.design_getter.get_teams_design()
+
+        self.migrate_design.migrate_teams_design()
+
+        clone_teams_de = self.design_getter.get_teams_design()
+
+        self.assertEqual(origin_teams_de, clone_teams_de)
+
+        for origin_design_data in origin_teams_de:
+            design_id = origin_design_data['id']
+
+            origin_design = self.migrate_design.design_getter\
+                .get_single_team_design(design_id)
+
+            cloned_design = self.design_getter.get_single_team_design(
+                design_id)
+
+            self.assertEqual(origin_design, cloned_design)
+
+    def test2_metrics_design_migration(self):
+        origin_metrics_des = self.migrate_design.design_getter\
+            .get_metrics_design()
+
+        self.migrate_design.migrate_metrics_design()
+
+        clone_metrics_des = self.design_getter.get_metrics_design()
+
+        self.assertEqual(origin_metrics_des, clone_metrics_des)
+
+        for origin_metric_data in origin_metrics_des:
+            design_id = origin_metric_data['id']
+
+            origin_design = self.migrate_design.design_getter\
+                .get_single_metric_design(design_id)
+
+            cloned_design = self.design_getter.get_single_metric_design(
+                design_id)
+
+            self.assertEqual(origin_design, cloned_design)
+
+    def test3_actions_design_migration(self):
+        self.migrate_design.migrate_metrics_design()
+
+        origin_action_des = self.migrate_design.design_getter\
+            .get_actions_design()
+
+        self.migrate_design.migrate_actions_design()
+
+        clone_action_des = self.design_getter.get_actions_design()
+
+        self.assertEqual(origin_action_des, clone_action_des)
+
+        for origin_action_data in origin_action_des:
+            action_id = origin_action_data['id']
+
+            origin_design = self.migrate_design.design_getter\
+                .get_single_action_design(action_id)
+
+            cloned_design = self.design_getter.get_single_action_design(
+                action_id)
+
+            self.assertEqual(origin_design, cloned_design)
+
+    def test4_leaderboards_design_migration(self):
+        self.migrate_design.migrate_metrics_design()
+
+        origin_boards_des = self.migrate_design.design_getter\
+            .get_leaderboards_design()
+
+        self.migrate_design.migrate_leaderboards_design()
+
+        clone_boards_des = self.design_getter.get_leaderboards_design()
+
+        self.assertEqual(origin_boards_des, clone_boards_des)
+
+        for origin_boards_data in origin_boards_des:
+            board_id = origin_boards_data['id']
+
+            origin_design = self.migrate_design.design_getter\
+                .get_single_leaderboard_design(board_id)
+
+            cloned_design = self.design_getter\
+                .get_single_leaderboard_design(board_id)
+
+            self.assertEqual(origin_design, cloned_design)

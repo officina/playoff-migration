@@ -26,12 +26,20 @@ playoff_client2 = Playoff(
     allow_unsecure=True
 )
 
-design_getter = GetPlayoffDesign(playoff_client)
+post_design = PostPlayoffDesign(playoff_client2)
 
-team_design = design_getter.get_single_team_design("globale")
+data = {
+    'id': 'globale_creativita',
+    'name': 'Globale Creatività',
+    'entity_type': 'players',
+    'scope': {
+        'type': 'team_definition',
+        'id': 'globale'
+    },
+    'metric': {
+        'id': 'creativita',
+        'type': 'point'
+    }
+}
 
-pprint(team_design)
-
-team_design2 = design_getter.get_single_team_design("")
-
-pprint(team_design2)
+post_design.create_leaderboard_design(data)
