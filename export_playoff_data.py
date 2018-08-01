@@ -8,8 +8,9 @@ from pprint import pprint
 
 
 class ExportData(object):
-    """ This class purpose is to retrieve data from Playoff game (via PlayoffMigration class), processing data
-    to retrieve only useful information and store it in json file.
+    """ This class purpose is to retrieve data from Playoff game
+    (via PlayoffMigration class), processing data to retrieve only useful
+    information and store it in json file.
     """
 
     pm: PlayoffMigration
@@ -35,7 +36,9 @@ class ExportData(object):
         return self.pm.__str__()
 
     def export_teams_design(self):
-        """ Create json file containing each team design of the original game"""
+        """ Create json file containing each team design of the original
+        game
+        """
         self._logger.info(self.export_teams_design.__name__ + " called")
 
         with open(self.__file_path + "teamsDesign.json", "w+") as file:
@@ -43,7 +46,8 @@ class ExportData(object):
             teams_design = self.pm.get_teams_design(Games.original)
 
             for team in teams_design:
-                single_team_design = self.pm.get_single_team_design(Games.original, team['id'])
+                single_team_design = self.pm.get_single_team_design(
+                    Games.original, team['id'])
 
                 # TODO : verifie if is necessary
                 # json parameter for post request
@@ -56,7 +60,8 @@ class ExportData(object):
                     '_hues': single_team_design['_hues']
                 }
 
-                cloned_teams_design.update({team['id']: cloned_single_team_design})
+                cloned_teams_design.update({team['id']:
+                                            cloned_single_team_design})
 
             json.dump(cloned_teams_design, file, sort_keys=True, indent=4)
 
@@ -238,8 +243,8 @@ class ExportData(object):
 
 
 class ExportRawData(object):
-    """ This class purpose is to retrieve data from Playoff game (via PlayoffMigration class) and store it in json
-    file.
+    """ This class purpose is to retrieve data from Playoff game
+    (via PlayoffMigration class) and store it in json file.
     """
 
     pm: PlayoffMigration

@@ -752,6 +752,10 @@ class PlayoffMigrationDesign(object):
                 "cycles": design_leaderboard['cycles']
             }
 
+            if "description" in design_leaderboard.keys():
+                leaderboard_data.update({"description":
+                                        design_leaderboard["description"]})
+
             self.design_creator.create_leaderboard_design(leaderboard_data)
 
     def migrate_all_design(self):
@@ -760,3 +764,38 @@ class PlayoffMigrationDesign(object):
         self.migrate_metrics_design()
         self.migrate_actions_design()
         self.migrate_leaderboards_design()
+
+# =======================
+# FILE EXPORT CLASS
+# =======================
+
+
+class PlayoffExportFile(object):
+
+    def __init__(self):
+        from pathlib import Path
+        env_path = Path('.') / '.env'
+        load_dotenv(dotenv_path=env_path)
+
+        game = Playoff(
+            client_id=os.environ["GAMELABNOTARGETV01_CLIENT_ID"],
+            client_secret=os.environ["GAMELABNOTARGETV01_CLIENT_SECRET"],
+            type='client',
+            allow_unsecure=True
+        )
+
+
+class ExportRawData(PlayoffExportFile):
+    pass
+
+
+class ExportRawDesign(PlayoffExportFile):
+    pass
+
+
+class ExportData(ExportRawData):
+    pass
+
+
+class ExportDesign(ExportRawDesign):
+    pass

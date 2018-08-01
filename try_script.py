@@ -26,20 +26,4 @@ playoff_client2 = Playoff(
     allow_unsecure=True
 )
 
-post_design = PostPlayoffDesign(playoff_client2)
-
-data = {
-    'id': 'globale_creativita',
-    'name': 'Globale Creatività',
-    'entity_type': 'players',
-    'scope': {
-        'type': 'team_definition',
-        'id': 'globale'
-    },
-    'metric': {
-        'id': 'creativita',
-        'type': 'point'
-    }
-}
-
-post_design.create_leaderboard_design(data)
+print(os.getcwd())
