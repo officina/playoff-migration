@@ -68,6 +68,27 @@ class Utility(object):
             if not par:
                 raise ParameterException("Parameter can't be empty")
 
+    @staticmethod
+    def get_playoff_client(client_id, client_secret):
+        """Return Playoff game instance given his client id and client secret
+
+        :param client_id: Playoff game client id
+        :param client_secret: Playoff game client secret
+        :return: Playoff game instance
+        """
+        Utility.raise_empty_parameter_exception([client_id, client_secret])
+
+        from pathlib import Path
+        env_path = Path('.') / '.env'
+        load_dotenv(dotenv_path=env_path)
+
+        return Playoff(
+            client_id=os.environ[client_id],
+            client_secret=os.environ[client_secret],
+            type='client',
+            allow_unsecure=True
+        )
+
 
 # =======================
 # DESIGN MANIPULATION CLASS
@@ -259,6 +280,13 @@ class DeletePlayoffDesign(object):
 
         for leaderboard in leaderboards_design:
             self.delete_single_leaderboard_design(leaderboard['id'])
+
+    def delete_all_design(self):
+        """Delete all design from the game"""
+        self.delete_leaderboards_design()
+        self.delete_actions_design()
+        self.delete_metrics_design()
+        self.delete_teams_design()
 
 
 # =======================
@@ -485,28 +513,6 @@ class DeletePlayoffData(object):
         for player in players_by_id:
             self.delete_single_player(player)
 
-
-# =======================
-# FACILITATOR CLASS
-# =======================
-
-# TODO: decide better approach
-# 1: have a derived class that declare 2 new method (this class)
-# 2: insert in class all methods (PlayoffMigration)
-class DeleteAll(DeletePlayoffDesign, DeletePlayoffData):
-    """Class that help delete all data and design from a game without
-    create two instances of base classes
-    """
-    def __init__(self, game: Playoff):
-        super(DeleteAll, self).__init__(game)
-
-    def delete_all_design(self):
-        """Delete all design from the game"""
-        self.delete_leaderboards_design()
-        self.delete_actions_design()
-        self.delete_metrics_design()
-        self.delete_teams_design()
-
     def delete_all_data(self):
         """Delete all data from the game"""
         self.delete_players()
@@ -521,22 +527,14 @@ class PlayoffMigrationData(object):
     """Class that make a migration of data from a Playoff game to an other"""
 
     def __init__(self):
-        from pathlib import Path
-        env_path = Path('.') / '.env'
-        load_dotenv(dotenv_path=env_path)
-
-        original = Playoff(
-            client_id=os.environ["GAMELABNOTARGETV01_CLIENT_ID"],
-            client_secret=os.environ["GAMELABNOTARGETV01_CLIENT_SECRET"],
-            type='client',
-            allow_unsecure=True
+        original = Utility.get_playoff_client(
+            "GAMELABNOTARGETV01_CLIENT_ID",
+            "GAMELABNOTARGETV01_CLIENT_SECRET"
         )
 
-        to_clone = Playoff(
-            client_id=os.environ["GAMELABCLONSCOPED2_CLIENT_ID"],
-            client_secret=os.environ["GAMELABCLONSCOPED2_CLIENT_SECRET"],
-            type='client',
-            allow_unsecure=True
+        to_clone = Utility.get_playoff_client(
+            "GAMELABCLONSCOPED2_CLIENT_ID",
+            "GAMELABCLONSCOPED2_CLIENT_SECRET"
         )
 
         self.data_getter = GetPlayoffData(original)
@@ -640,22 +638,14 @@ class PlayoffMigrationDesign(object):
     """Class that make a migration of design from a Playoff game to an other"""
 
     def __init__(self):
-        from pathlib import Path
-        env_path = Path('.') / '.env'
-        load_dotenv(dotenv_path=env_path)
-
-        original = Playoff(
-            client_id=os.environ["GAMELABNOTARGETV01_CLIENT_ID"],
-            client_secret=os.environ["GAMELABNOTARGETV01_CLIENT_SECRET"],
-            type='client',
-            allow_unsecure=True
+        original = Utility.get_playoff_client(
+            "GAMELABNOTARGETV01_CLIENT_ID",
+            "GAMELABNOTARGETV01_CLIENT_SECRET"
         )
 
-        to_clone = Playoff(
-            client_id=os.environ["GAMELABCLONSCOPED2_CLIENT_ID"],
-            client_secret=os.environ["GAMELABCLONSCOPED2_CLIENT_SECRET"],
-            type='client',
-            allow_unsecure=True
+        to_clone = Utility.get_playoff_client(
+            "GAMELABCLONSCOPED2_CLIENT_ID",
+            "GAMELABCLONSCOPED2_CLIENT_SECRET"
         )
 
         self.design_getter = GetPlayoffDesign(original)
@@ -764,38 +754,3 @@ class PlayoffMigrationDesign(object):
         self.migrate_metrics_design()
         self.migrate_actions_design()
         self.migrate_leaderboards_design()
-
-# =======================
-# FILE EXPORT CLASS
-# =======================
-
-
-class PlayoffExportFile(object):
-
-    def __init__(self):
-        from pathlib import Path
-        env_path = Path('.') / '.env'
-        load_dotenv(dotenv_path=env_path)
-
-        game = Playoff(
-            client_id=os.environ["GAMELABNOTARGETV01_CLIENT_ID"],
-            client_secret=os.environ["GAMELABNOTARGETV01_CLIENT_SECRET"],
-            type='client',
-            allow_unsecure=True
-        )
-
-
-class ExportRawData(PlayoffExportFile):
-    pass
-
-
-class ExportRawDesign(PlayoffExportFile):
-    pass
-
-
-class ExportData(ExportRawData):
-    pass
-
-
-class ExportDesign(ExportRawDesign):
-    pass

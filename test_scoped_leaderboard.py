@@ -10,20 +10,14 @@ from dotenv import load_dotenv
 class ScopedLeaderboardTest(unittest.TestCase):
 
     def setUp(self):
-        from pathlib import Path
-        env_path = Path('.') / '.env'
-        load_dotenv(dotenv_path=env_path)
-        original = Playoff(
-            client_id=os.environ["GAMELABNOTARGETV01_CLIENT_ID"],
-            client_secret=os.environ["GAMELABNOTARGETV01_CLIENT_SECRET"],
-            type='client',
-            allow_unsecure=True
+        original = Utility.get_playoff_client(
+            "GAMELABNOTARGETV01_CLIENT_ID",
+            "GAMELABNOTARGETV01_CLIENT_SECRET"
         )
-        to_clone = Playoff(
-            client_id=os.environ["GAMELABCLONSCOPED2_CLIENT_ID"],
-            client_secret=os.environ["GAMELABCLONSCOPED2_CLIENT_SECRET"],
-            type='client',
-            allow_unsecure=True
+
+        to_clone = Utility.get_playoff_client(
+            "GAMELABCLONSCOPED2_CLIENT_ID",
+            "GAMELABCLONSCOPED2_CLIENT_SECRET"
         )
 
         self.scoped_client = ScopedLeaderboard()
@@ -83,6 +77,7 @@ class ScopedLeaderboardTest(unittest.TestCase):
             if feed['event'] == 'action':
                 player_scopes = feed['scopes']
 
-                lab_somma_scopes = ScopedUtility.get_lab_somma_scopes(player_aggr_id)
+                lab_somma_scopes = ScopedUtility.get_lab_somma_scopes(
+                    player_aggr_id)
 
                 self.assertEqual(player_scopes, lab_somma_scopes)

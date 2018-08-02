@@ -27,18 +27,21 @@ class UtilityTest(unittest.TestCase):
         self.assertRaises(ParameterException,
                           Utility.raise_empty_parameter_exception, [])
 
+    def test_playoff_client_factory(self):
+        client_id = "GAMELABNOTARGETV01_CLIENT_ID"
+        client_secret = "GAMELABNOTARGETV01_CLIENT_SECRET"
+
+        client = Utility.get_playoff_client(client_id, client_secret)
+
+        self.assertTrue(isinstance(client, Playoff))
+
 
 class GetPlayoffDesignTest(unittest.TestCase):
 
     def setUp(self):
-        from pathlib import Path
-        env_path = Path('.') / '.env'
-        load_dotenv(dotenv_path=env_path)
-        playoff_client = Playoff(
-            client_id=os.environ["GAMELABNOTARGETV01_CLIENT_ID"],
-            client_secret=os.environ["GAMELABNOTARGETV01_CLIENT_SECRET"],
-            type='client',
-            allow_unsecure=True
+        playoff_client = Utility.get_playoff_client(
+            "GAMELABNOTARGETV01_CLIENT_ID",
+            "GAMELABNOTARGETV01_CLIENT_SECRET"
         )
 
         self.design_getter = GetPlayoffDesign(playoff_client)
@@ -80,14 +83,9 @@ class GetPlayoffDesignTest(unittest.TestCase):
 class PostDeletePlayoffDesignTest(unittest.TestCase):
 
     def setUp(self):
-        from pathlib import Path
-        env_path = Path('.') / '.env'
-        load_dotenv(dotenv_path=env_path)
-        playoff_client = Playoff(
-            client_id=os.environ["GAMELABCLONSCOPED2_CLIENT_ID"],
-            client_secret=os.environ["GAMELABCLONSCOPED2_CLIENT_SECRET"],
-            type='client',
-            allow_unsecure=True
+        playoff_client = Utility.get_playoff_client(
+            "GAMELABCLONSCOPED2_CLIENT_ID",
+            "GAMELABCLONSCOPED2_CLIENT_SECRET"
         )
 
         self.design_poster = PostPlayoffDesign(playoff_client)
@@ -307,14 +305,9 @@ class PostDeletePlayoffDesignTest(unittest.TestCase):
 class GetPlayoffDataTest(unittest.TestCase):
 
     def setUp(self):
-        from pathlib import Path
-        env_path = Path('.') / '.env'
-        load_dotenv(dotenv_path=env_path)
-        playoff_client = Playoff(
-            client_id=os.environ["GAMELABNOTARGETV01_CLIENT_ID"],
-            client_secret=os.environ["GAMELABNOTARGETV01_CLIENT_SECRET"],
-            type='client',
-            allow_unsecure=True
+        playoff_client = Utility.get_playoff_client(
+            "GAMELABNOTARGETV01_CLIENT_ID",
+            "GAMELABNOTARGETV01_CLIENT_SECRET"
         )
 
         self.data_getter = GetPlayoffData(playoff_client)
@@ -394,14 +387,9 @@ class GetPlayoffDataTest(unittest.TestCase):
 class PostDeletePlayoffDataTest(unittest.TestCase):
 
     def setUp(self):
-        from pathlib import Path
-        env_path = Path('.') / '.env'
-        load_dotenv(dotenv_path=env_path)
-        playoff_client = Playoff(
-            client_id=os.environ["GAMELABCLONSCOPED2_CLIENT_ID"],
-            client_secret=os.environ["GAMELABCLONSCOPED2_CLIENT_SECRET"],
-            type='client',
-            allow_unsecure=True
+        playoff_client = Utility.get_playoff_client(
+            "GAMELABCLONSCOPED2_CLIENT_ID",
+            "GAMELABCLONSCOPED2_CLIENT_SECRET"
         )
 
         self.data_deleter = DeletePlayoffData(playoff_client)
@@ -550,19 +538,13 @@ class PostDeletePlayoffDataTest(unittest.TestCase):
 class MigrationDataTest(unittest.TestCase):
 
     def setUp(self):
-        from pathlib import Path
-        env_path = Path('.') / '.env'
-        load_dotenv(dotenv_path=env_path)
-
-        original = Playoff(
-            client_id=os.environ["GAMELABCLONSCOPED2_CLIENT_ID"],
-            client_secret=os.environ["GAMELABCLONSCOPED2_CLIENT_SECRET"],
-            type='client',
-            allow_unsecure=True
+        to_clone = Utility.get_playoff_client(
+            "GAMELABCLONSCOPED2_CLIENT_ID",
+            "GAMELABCLONSCOPED2_CLIENT_SECRET"
         )
 
         self.migrate_data = PlayoffMigrationData()
-        self.data_getter_cloned = GetPlayoffData(original)
+        self.data_getter_cloned = GetPlayoffData(to_clone)
 
     def test1_teams_migration(self):
         origin_teams_id = self.migrate_data.data_getter.get_teams_by_id()
@@ -626,15 +608,9 @@ class MigrationDataTest(unittest.TestCase):
 class MigrationDesignTest(unittest.TestCase):
 
     def setUp(self):
-        from pathlib import Path
-        env_path = Path('.') / '.env'
-        load_dotenv(dotenv_path=env_path)
-
-        to_clone = Playoff(
-            client_id=os.environ["GAMELABCLONSCOPED2_CLIENT_ID"],
-            client_secret=os.environ["GAMELABCLONSCOPED2_CLIENT_SECRET"],
-            type='client',
-            allow_unsecure=True
+        to_clone = Utility.get_playoff_client(
+            "GAMELABCLONSCOPED2_CLIENT_ID",
+            "GAMELABCLONSCOPED2_CLIENT_SECRET"
         )
 
         self.migrate_design = PlayoffMigrationDesign()

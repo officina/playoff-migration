@@ -1,14 +1,7 @@
 from refactor_playoff_migration import ParameterException, \
     PlayoffMigrationDesign, PlayoffMigrationData, Utility
 
-# =======================
-# UTILITY CLASS
-# =======================
 
-
-# TODO: ho preferito fare una sola classe utilità e non dividerla in
-# due come su refactor_playoff_migration perché è più piccola, vale come
-# motivo?
 class ScopedUtility(Utility):
     """Class that define methods or constants useful for the other class"""
 
