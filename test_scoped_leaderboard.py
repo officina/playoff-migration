@@ -26,6 +26,8 @@ class ScopedLeaderboardTest(unittest.TestCase):
         self.design_getter_cloned = GetPlayoffDesign(to_clone)
         self.data_getter = GetPlayoffData(original)
         self.data_getter_cloned = GetPlayoffData(to_clone)
+        self.data_deleter_cloned = DeletePlayoffData(to_clone)
+        self.data_poster_cloned = PostPlayoffData(to_clone)
 
     def test_migrate_leaderboards_design(self):
         leaderboards = self.design_getter.get_leaderboards_design()
@@ -44,13 +46,52 @@ class ScopedLeaderboardTest(unittest.TestCase):
             self.assertEqual(leaderboard_design['scope'], {"type": "custom"})
 
     def test_migrate_player_feed(self):
-        # PRE
-        # i due player sono appena stati creati e non hanno ancora nessun
-        # feed
-
         player_id = "agazzani"
         player_aggr_id = "community_player_aggregate"
 
+        # Delete players
+        self.data_deleter_cloned.delete_single_player(player_id)
+        self.data_deleter_cloned.delete_single_player(player_aggr_id)
+
+        # Create players
+        player_data = {
+            "id": player_id,
+            "alias": player_id
+        }
+        player_aggr_data = {
+            "id": player_aggr_id,
+            "alias": player_aggr_id
+        }
+
+        self.data_poster_cloned.create_player(player_data)
+        self.data_poster_cloned.create_player(player_aggr_data)
+
+        # Add players to team
+        player_profile = self.data_getter.get_player_profile(player_id)
+        player_aggr_profile = self.data_getter.get_player_profile(
+            player_aggr_id)
+
+        for team in player_profile["teams"]:
+            data = {
+                "requested_roles": {
+                    team['roles'][0]: True
+                },
+                "player_id": player_profile["id"]
+            }
+
+            self.data_poster_cloned.join_team(team["id"], data)
+
+        for team in player_aggr_profile["teams"]:
+            data = {
+                "requested_roles": {
+                    team['roles'][0]: True
+                },
+                "player_id": player_aggr_profile["id"]
+            }
+
+            self.data_poster_cloned.join_team(team["id"], data)
+
+        # Actual test
         player_feed = self.data_getter.get_player_feed(player_id)
         player_aggr_feed = self.data_getter.get_player_feed(player_aggr_id)
 
@@ -64,6 +105,7 @@ class ScopedLeaderboardTest(unittest.TestCase):
             .get_player_feed(player_aggr_id)
 
         for feed in player_feed:
+
             if feed['event'] == 'action':
                 player_scopes = feed['scopes']
                 action_id = feed['action']['id']

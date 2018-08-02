@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from refactor_playoff_migration import ParameterException, \
     PlayoffMigrationDesign, PlayoffMigrationData, Utility
 
@@ -142,6 +144,7 @@ class ScopedLeaderboard(PlayoffMigrationDesign, PlayoffMigrationData):
         player_teams = player_data['teams']
 
         for feed in player_feed:
+
             if feed["event"] == "action":
                 action_id = feed['action']['id']
                 variables = feed['action']['vars']

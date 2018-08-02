@@ -585,11 +585,12 @@ class PlayoffMigrationData(object):
 
         for team in player_data["teams"]:
             data = {
-                "requested_roles": {
-                    team['roles'][0]: True
-                },
+                "requested_roles": {},
                 "player_id": player_data["id"]
             }
+
+            for role in team['roles']:
+                data['requested_roles'].update({role: True})
 
             self.data_creator.join_team(team["id"], data)
 
