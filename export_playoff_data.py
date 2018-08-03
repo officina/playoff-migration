@@ -35,6 +35,7 @@ class ExportData(object):
     def __str__(self):
         return self.pm.__str__()
 
+    #
     def export_teams_design(self):
         """ Create json file containing each team design of the original
         game
@@ -65,6 +66,7 @@ class ExportData(object):
 
             json.dump(cloned_teams_design, file, sort_keys=True, indent=4)
 
+    #
     def export_metric_design(self):
         """ Create json file containing each metric design of the original game"""
         self._logger.info(self.export_metric_design.__name__ + " called")
@@ -87,6 +89,7 @@ class ExportData(object):
 
             json.dump(cloned_metrics_design, file, sort_keys=True, indent=4)
 
+    #
     def export_actions_design(self):
         """ Create json file containing each action design of the original game"""
         self._logger.info(self.export_actions_design.__name__ + " called")
@@ -102,6 +105,7 @@ class ExportData(object):
 
             json.dump(cloned_actions_design, file, sort_keys=True, indent=4)
 
+    #
     def export_leaderboards_design(self):
         """ Create json file containing each leaderboard design of the original game"""
         self._logger.info(self.export_leaderboards_design.__name__ + " called")
@@ -125,6 +129,7 @@ class ExportData(object):
 
             json.dump(cloned_leaderboards_design, file, sort_keys=True, indent=4)
 
+    #
     def export_teams_instances(self):
         """ Create json file containing each team instance of the original game"""
         self._logger.info(self.export_teams_instances.__name__ + " called")
@@ -147,6 +152,7 @@ class ExportData(object):
 
             json.dump(cloned_teams_instances, file, sort_keys=True, indent=4)
 
+    #
     def export_players(self):
         """ Create json file containing id and alias of each player of the original game"""
         self._logger.info(self.export_players.__name__ + " called")
@@ -166,6 +172,7 @@ class ExportData(object):
 
             json.dump(cloned_players, file, sort_keys=True, indent=4)
 
+    #
     def export_players_in_team(self):
         """ Create json file containing the team of each player of the original game"""
         self._logger.info(self.export_players_in_team.__name__ + " called")
@@ -197,6 +204,7 @@ class ExportData(object):
 
             json.dump(cloned_players_in_team, file, sort_keys=True, indent=4)
 
+    #
     def export_players_feed(self):
         """ Create json file containing the activity feed of each player of the original game"""
         self._logger.info(self.export_players_feed.__name__ + " called")
