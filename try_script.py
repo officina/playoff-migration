@@ -20,10 +20,3 @@ playoff_client2 = Utility.get_playoff_client(
     "GAMELABCLONSCOPED2_CLIENT_ID",
     "GAMELABCLONSCOPED2_CLIENT_SECRET"
 )
-
-export_design = ExportDesign()
-
-export_design.export_teams_design()
-export_design.export_metric_design()
-export_design.export_actions_design()
-export_design.export_leaderboards_design()
