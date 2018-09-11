@@ -68,20 +68,23 @@ class PlayoffMigration(object):
         env_path = Path('.') / '.env'
         load_dotenv(dotenv_path=env_path)
         self._original = Playoff(
-            client_id=os.environ["GAMELABNOTARGETV01_CLIENT_ID"],
-            client_secret=os.environ["GAMELABNOTARGETV01_CLIENT_SECRET"],
+            hostname='playoff.cc',
+            client_id=os.environ["MYGENERALI_PLAYOFF_CC_CLIENT_ID"],
+            client_secret=os.environ["MYGENERALI_PLAYOFF_CC_CLIENT_SECRET"],
             type='client',
             allow_unsecure=True
         )
         self._cloned = Playoff(
-            client_id=os.environ["GAMELABCLONSCOPED2_CLIENT_ID"],
-            client_secret=os.environ["GAMELABCLONSCOPED2_CLIENT_SECRET"],
+            hostname='playoffgenerali.it',
+            client_id=os.environ["MYGENERALI_PLAYOFF_GENERALI_CLIENT_ID"],
+            client_secret=os.environ["MYGENERALI_PLAYOFF_GENERALI_CLIENT_SECRET"],
             type='client',
             allow_unsecure=True
         )
         self._scoped = Playoff(
-            client_id=os.environ["GAMELABCLONSCOPED3_CLIENT_ID"],
-            client_secret=os.environ["GAMELABCLONSCOPED3_CLIENT_SECRET"],
+            hostname='playoffgenerali.it',
+            client_id=os.environ["MYGENERALI_PLAYOFF_GENERALI_CLIENT_ID"],
+            client_secret=os.environ["MYGENERALI_PLAYOFF_GENERALI_CLIENT_SECRET"],
             type='client',
             allow_unsecure=True
         )
@@ -535,6 +538,8 @@ class PlayoffMigration(object):
         for action in actions_design:
             single_action_design = self.get_single_action_design\
                 (Games.original, action['id'])
+            if "S01" in single_action_design['id']:
+                continue
 
             single_action_info = {
                 "id": single_action_design['id'],
@@ -778,4 +783,7 @@ class PlayoffMigration(object):
 
 if __name__ == '__main__':
     p = PlayoffMigration()
+    p.migrate_metrics_design(game=Games.cloned)
+    p.migrate_action_design(game=Games.cloned)
+    p.migrate_leaderboards_design(game=Games.cloned)
     print(p)
