@@ -1,32 +1,31 @@
 import os
-from json import dump
+from json import dump, load
 
 from refactor_playoff_migration import GetPlayoffDesign, GetPlayoffData, \
-    Utility
+    PostPlayoffData, PostPlayoffDesign, Playoff
 
 
 class Export(object):
+    """Base class that create a base dir and some parameters for exports
+    classes
+    """
 
-    def __init__(self):
+    def __init__(self, game: Playoff):
         self.base_dir = "playoff-data"
         self.proj_path = os.getcwd() + "\\" + self.base_dir + "\\"
 
         if not os.path.isdir(self.proj_path):
             os.mkdir(self.base_dir)
 
-        playoff_client = Utility.get_playoff_client(
-            "GAMELABNOTARGETV01_CLIENT_ID",
-            "GAMELABNOTARGETV01_CLIENT_SECRET"
-        )
-
-        self.design_getter = GetPlayoffDesign(playoff_client)
-        self.data_getter = GetPlayoffData(playoff_client)
+        self.design_getter = GetPlayoffDesign(game)
+        self.data_getter = GetPlayoffData(game)
 
 
 class ExportRawDesign(Export):
+    """Class that export raw design information from a game to a file .json"""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, game: Playoff):
+        super().__init__(game)
 
         self.dir_name = "design-raw"
         self.path = self.proj_path + self.dir_name + "\\"
@@ -98,11 +97,18 @@ class ExportRawDesign(Export):
 
             dump(cloned_leaderboards_design, file, sort_keys=True, indent=4)
 
+    def export_all_design(self):
+        self.export_teams()
+        self.export_metrics()
+        self.export_actions()
+        self.export_leaderboards()
+
 
 class ExportRawData(Export):
+    """Class that export raw data information from a game to a file .json"""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, game: Playoff):
+        super().__init__(game)
 
         self.dir_name = "data-raw"
         self.path = self.proj_path + self.dir_name + "\\"
@@ -156,11 +162,16 @@ class ExportRawData(Export):
 
             dump(cloned_feed, file, sort_keys=True, indent=4)
 
+    def export_all_data(self):
+        self.export_teams()
+        self.export_players()
+        self.export_players_feed()
+
 
 class ExportDesign(Export):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, game: Playoff):
+        super().__init__(game)
 
         self.dir_name = "design"
         self.path = self.proj_path + self.dir_name + "\\"
@@ -269,11 +280,17 @@ class ExportDesign(Export):
 
             dump(cloned_leaderboards, file, sort_keys=True, indent=4)
 
+    def export_all_design(self):
+        self.export_teams()
+        self.export_metrics()
+        self.export_actions()
+        self.export_leaderboards()
+
 
 class ExportData(Export):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, game: Playoff):
+        super().__init__(game)
 
         self.dir_name = "data"
         self.path = self.proj_path + self.dir_name + "\\"
@@ -385,4 +402,133 @@ class ExportData(Export):
 
             dump(cloned_players_feed, file, sort_keys=True, indent=4)
 
+    def export_all_data(self):
+        self.export_teams()
+        self.export_players()
+        self.export_players_in_team()
+        self.export_players_feed()
 
+
+class Import(object):
+    """Base class that saves base path and create an instance of a game for
+    imports classes"""
+
+    def __init__(self, game: Playoff):
+        self.base_dir = "playoff-data"
+        self.proj_path = os.getcwd() + "\\" + self.base_dir + "\\"
+
+        if not os.path.isdir(self.proj_path):
+            raise Exception("Directory doesn't exists")
+
+        self.design_poster = PostPlayoffDesign(game)
+        self.data_poster = PostPlayoffData(game)
+
+
+class ImportDesign(Import):
+    """Class that import design in a playoff game from a .json file"""
+
+    def __init__(self, game: Playoff):
+        super().__init__(game)
+
+        self.dir_name = "design"
+        self.path = self.proj_path + self.dir_name + "\\"
+
+        if not os.path.isdir(self.path):
+            raise Exception("Directory doesn't exists")
+
+    def import_teams(self):
+        """Import teams from .json file"""
+        with open(self.path + "teams_design.json", "r") as file:
+            teams_design = load(file)
+
+        for team in teams_design:
+            self.design_poster.create_team_design(team)
+
+    def import_metrics(self):
+        """Import metrics from .json file"""
+        with open(self.path + "metric_design.json", "r") as file:
+            metrics_design = load(file)
+
+        for metric in metrics_design:
+            self.design_poster.create_metric_design(metric)
+
+    def import_actions(self):
+        """Import actions from .json file"""
+        with open(self.path + "actions_design.json", "r") as file:
+            actions_design = load(file)
+
+        for action in actions_design:
+            self.design_poster.create_action_design(action)
+
+    def import_leaderboards(self):
+        """Import leaderboards from .json file"""
+        with open(self.path + "leaderboards_design.json", "r") as file:
+            leaderboards_design = load(file)
+
+        for leaderboard in leaderboards_design:
+            self.design_poster\
+                .create_leaderboard_design(leaderboard)
+
+    def import_all_design(self):
+        self.import_teams()
+        self.import_metrics()
+        self.import_actions()
+        self.import_leaderboards()
+
+
+class ImportData(Import):
+    """Class that import data in a playoff game from a .json file"""
+
+    def __init__(self, game: Playoff):
+        super().__init__(game)
+
+        self.dir_name = "data"
+        self.path = self.proj_path + self.dir_name + "\\"
+
+        if not os.path.isdir(self.path):
+            raise Exception("Directory doesn't exists")
+
+    def import_teams(self):
+        """Import teams from .json file"""
+        with open(self.path + "teams.json", "r") as file:
+            teams = load(file)
+
+        for team in teams:
+            self.data_poster.create_team(team)
+
+    def import_players(self):
+        """Import players from .json file"""
+        with open(self.path + "players.json", "r") as file:
+            players = load(file)
+
+        for player in players:
+            self.data_poster.create_player(player)
+
+    def import_players_in_team(self):
+        """Import players in team from .json file"""
+        with open(self.path + "players_in_team.json", "r") as file:
+            players_in_team = load(file)
+
+        for key, value in players_in_team.items():
+            for player in value:
+                self.data_poster.join_team(key, player)
+
+    def import_players_feed(self):
+        """Import players feed from .json file"""
+        with open(self.path + "players_feed.json", "r") as file:
+            players_feed = load(file)
+
+        for key, value in players_feed.items():
+            for feed in value:
+                data = {
+                    "scopes": feed["scopes"],
+                    "variables": feed["variables"]
+                }
+                self.data_poster.take_action(feed['id'], {"player_id": key},
+                                             data)
+
+    def import_all_data(self):
+        self.import_teams()
+        self.import_players()
+        self.import_players_in_team()
+        self.import_players_feed()

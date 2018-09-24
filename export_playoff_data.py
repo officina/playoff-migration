@@ -279,6 +279,7 @@ class ExportRawData(object):
     def __str__(self):
         return self.pm.__str__()
 
+    #
     def export_raw_teams_instances(self):
         """Saves raw instances of all teams from the original game in a .json format"""
         self._logger.info(self.export_raw_teams_instances.__name__ + " called")
@@ -295,6 +296,7 @@ class ExportRawData(object):
             for team in cloned_teams_instances:
                 json.dump(team, file, sort_keys=True, indent=4)
 
+    #
     def export_raw_players_profile_data(self):
         """Saves raw profile data of all players from the original game in a .json format
         Profile data of a player includes feeds and their teams
@@ -313,6 +315,7 @@ class ExportRawData(object):
             for player in cloned_players:
                 json.dump(player, file, sort_keys=True, indent=4)
 
+    #
     def export_raw_teams_design(self):
         """Saves raw teams design data from the original game in a .json file"""
         self._logger.info(self.export_raw_teams_design.__name__ + " called")
@@ -328,6 +331,7 @@ class ExportRawData(object):
 
             json.dump(cloned_teams_design, file, sort_keys=True, indent=4)
 
+    #
     def export_raw_metrics_design(self):
         """Saves raw metrics design data from the original game in a .json file"""
         self._logger.info(self.export_raw_metrics_design.__name__ + " called")
@@ -343,6 +347,7 @@ class ExportRawData(object):
 
             json.dump(cloned_metrics_design, file, sort_keys=True, indent=4)
 
+    #
     def export_raw_actions_design(self):
         """Saves raw actions design data from the original game in a .json file"""
         self._logger.info(self.export_raw_actions_design.__name__ + " called")
@@ -358,6 +363,7 @@ class ExportRawData(object):
 
             json.dump(cloned_actions_design, file, sort_keys=True, indent=4)
 
+    #
     def export_raw_leaderboards_design(self):
         """Saves raw leaderboards design data from the original game in a .json file"""
         self._logger.info(self.export_raw_leaderboards_design.__name__ + " called")

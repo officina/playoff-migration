@@ -39,6 +39,7 @@ class ImportData(object):
     # +++++++++++++++
     # IMPORT METHODS
 
+    #
     def import_teams_design(self):
         """ Import teams design from file and post them in the game """
         self._logger.info(self.import_teams_design.__name__ + " called")
@@ -49,6 +50,7 @@ class ImportData(object):
         for key, value in teams_design.items():
             self.target.post("/design/versions/latest/teams", {}, value)
 
+    #
     def import_teams_instance(self):
         """ Import teams instances from file and post them in the game """
         self._logger.info(self.import_teams_instance.__name__ + " called")
@@ -59,6 +61,7 @@ class ImportData(object):
         for key, value in teams_instance.items():
             self.target.post("/admin/teams", {}, value)
 
+    #
     def import_players(self):
         """ Import players from file and post them in the game """
         self._logger.info(self.import_players.__name__ + " called")
@@ -69,6 +72,7 @@ class ImportData(object):
         for key, value in players.items():
             self.target.post('/admin/players', {}, value)
 
+    #
     def import_players_in_team(self):
         """ Import players in teams from file and post them in the game """
         self._logger.info(self.import_players_in_team.__name__ + " called")
@@ -81,6 +85,7 @@ class ImportData(object):
             for player_info in value:
                 self.target.post("/admin/teams/" + key + "/join", {}, player_info)
 
+    #
     def import_metric_design(self):
         """ Import metrics design from file and post them in the game """
         self._logger.info(self.import_metric_design.__name__ + " called")
@@ -91,6 +96,7 @@ class ImportData(object):
         for key, value in metrics_design.items():
             self.target.post("/design/versions/latest/metrics", {}, value)
 
+    #
     def import_action_design(self):
         """ Import actions design from file and post them in the game """
         self._logger.info(self.import_action_design.__name__ + " called")
@@ -101,6 +107,7 @@ class ImportData(object):
         for key, value in actions_design.items():
             self.target.post("/design/versions/latest/actions", {}, value)
 
+    #
     def import_players_feed(self):
         """ Import players feed from file and post them in the game """
         self._logger.info(self.import_players_feed.__name__ + " called")
@@ -114,6 +121,7 @@ class ImportData(object):
                 self.target.post("/runtime/actions/" + feed['id'] + "/play",
                                  {"player_id": player_id}, {"variables": feed['variables'], "scopes": feed['scopes']})
 
+    #
     def import_leaderboard_design(self):
         """ Import leaderboard design from file and post them in the game """
         self._logger.info(self.import_leaderboard_design.__name__ + " called")
