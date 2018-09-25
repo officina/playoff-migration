@@ -1,696 +1,1017 @@
 import os
-from enum import Enum
-from pprint import pprint
+from logging import Logger
 import logging
 
-from playoff import Playoff, PlayoffException
+from playoff import Playoff
 from dotenv import load_dotenv
 
-
-class Games(Enum):
-    """ Enumeration type that identifies each different game """
-    original = "original"
-    cloned = "cloned"
-    scoped = "scoped"
+# =======================
+# EXCEPTION CLASS
+# =======================
 
 
-class PlayoffMigration(object):
-    """ This class implements all the necessary methods and attributes to clone a game and scope its assetts in a
-    second one """
-    ACTION_LEADERBOARD_PARSER = {
-        "sfida_circle_the_dot": "globale_punti_circle_the_dot_scoped",
-        "sfida_circle_the_dot_reset": "globale_punti_circle_the_dot_scoped",
-        "sfida_circledot": "globale_punti_circle_dot_scoped",
-        "sfida_circledot_reset": "globale_punti_circle_dot_scoped",
-        "sfida_color_flow": "globale_punti_color_flow_scoped",
-        "sfida_color_flow_reset": "globale_punti_color_flow_scoped",
-        "sfida_draw_line": "globale_punti_draw_line_scoped",
-        "sfida_draw_line_reset": "globale_punti_draw_line_scoped",
-        "sfida_electrio": "globale_punti_electrio",
-        "sfida_electrio_reset": "globale_punti_electrio",
-        "sfida_engineerio": "globale_punti_engineerio",
-        "sfida_engineerio_reset": "globale_punti_engineerio",
-        "sfida_focus": "globale_punti_focus",
-        "sfida_focus_reset": "globale_punti_focus",
-        "sfida_gummy_block": "globale_punti_gummy_block",
-        "sfida_gummy_block_reset": "globale_punti_gummy_block",
-        "sfida_light_color": "globale_punti_light_color",
-        "sfida_light_color_reset": "globale_punti_light_color",
-        "sfida_lights": "globale_punti_lights",
-        "sfida_lights_reset": "globale_punti_lights",
-        "sfida_line_follower": "globale_punti_line_follower",
-        "sfida_line_follower_reset": "globale_punti_line_follower",
-        "sfida_make7": "globale_punti_make7",
-        "sfida_make7_reset": "globale_punti_make7",
-        "sfida_parity_with_number": "globale_punti_parity_with_number",
-        "sfida_parity_with_number_reset": "globale_punti_parity_with_number",
-        "sfida_swappy_balls": "globale_punti_swappy_balls",
-        "sfida_swappy_balls_reset": "globale_punti_swappy_balls",
-        "sfida_thief_challenge": "globale_punti_thief_challenge",
-        "sfida_thief_challenge_reset": "globale_punti_thief_challenge",
-    }
+class ParameterException(Exception):
+    """Class that define an exception for parameters methods"""
+    pass
 
-    _original: Playoff
-    _cloned: Playoff
-    _scoped: Playoff
 
-    def __init__(self):
-        self._logger = logging.getLogger("migration_logger")
-        self._logger.setLevel(logging.DEBUG)
-        ch = logging.FileHandler(filename="migration.log", mode="w")
-        ch.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', '%m/%d/%Y %I:%M:%S %p')
-        ch.setFormatter(formatter)
-        self._logger.addHandler(ch)
-        self._logger.info("PlayoffMigration logger is running...")
+# =======================
+# CONVENIENT CLASS
+# =======================
 
-        from pathlib import Path  # python3 only
-        env_path = Path('.') / '.env'
-        load_dotenv(dotenv_path=env_path)
-        self._original = Playoff(
-            client_id=os.environ["GAMELABNOTARGETV01_CLIENT_ID"],
-            client_secret=os.environ["GAMELABNOTARGETV01_CLIENT_SECRET"],
-            type='client',
-            allow_unsecure=True
-        )
-        self._cloned = Playoff(
-            client_id=os.environ["GAMELABCLONSCOPED2_CLIENT_ID"],
-            client_secret=os.environ["GAMELABCLONSCOPED2_CLIENT_SECRET"],
-            type='client',
-            allow_unsecure=True
-        )
-        self._scoped = Playoff(
-            client_id=os.environ["GAMELABCLONSCOPED3_CLIENT_ID"],
-            client_secret=os.environ["GAMELABCLONSCOPED3_CLIENT_SECRET"],
-            type='client',
-            allow_unsecure=True
-        )
 
-    def __str__(self):
-        return f'playoff={self._original}' + f'playoff={self._cloned}' + f'playoff={self._scoped}'
+class Constant(object):
+    """Class that define some useful costant"""
 
-    # ++++++++++++++++++++++++
-    # UTILITIES
+    VERSION = "latest"
+    TOTAL = "total"
+    PLAYER_ID = "atomasse"
+    BIG_NUMBER = 10 ** 10
+    CYCLE = "alltime"
 
-    def __get_game(self, game: Games):
-        """ Return instance of the chosen game """
-        if game == Games.original:
-            return self._original
-        elif game == Games.cloned:
-            return self._cloned
-        elif game == Games.scoped:
-            return self._scoped
+    ADMIN_ROOT = "/admin/"
+    ADMIN_PLAYERS = "/admin/players/"
+    ADMIN_TEAMS = "/admin/teams/"
+
+    DESIGN_TEAMS = "/design/versions/" + VERSION + "/teams/"
+    DESIGN_ACTIONS = "/design/versions/" + VERSION + "/actions/"
+    DESIGN_METRICS = "/design/versions/" + VERSION + "/metrics/"
+    DESIGN_LEADERBOARDS = "/design/versions/" + VERSION + "/leaderboards/"
+
+    RUNTIME_ACTION = "/runtime/actions/"
+    RUNTIME_LEADERBOARDS = "/runtime/leaderboards/"
+
+
+class MigrationLogger:
+    __instance: Logger = None
 
     @staticmethod
-    def __get_number_pages(number):
-        """ Returns the number of pages needed for pagination """
-        n_pages = int(number / 100)
+    def get_instance():
+        if MigrationLogger.__instance is None:
+            MigrationLogger()
+        return MigrationLogger.__instance
 
-        if number % 100 > 0:
-            n_pages += 1
+    def __init__(self):
+        """ Virtually private constructor. """
+        if MigrationLogger.__instance is not None:
+            raise Exception("This class is a singleton!")
+        else:
+            MigrationLogger.__instance = logging.getLogger("migration_logger")
+            MigrationLogger.__instance.setLevel(logging.DEBUG)
+            ch = logging.FileHandler(filename="migration.log", mode="w")
+            ch.setLevel(logging.DEBUG)
+            formatter = logging.Formatter(
+                "%(asctime)s - %(levelname)s - %(message)s",
+                "%m/%d/%Y %I:%M:%S %p")
+            ch.setFormatter(formatter)
+            MigrationLogger.__instance.addHandler(ch)
 
-        return n_pages
 
-    # ++++++++++++++++++++++++
-    # INFORMATION RETRIEVERS
+class Utility(object):
+    """Class that define some useful methods"""
 
-    def get_number_teams(self, game: Games):
-        """ Returns the number of teams of the chosen game """
-        return self.__get_game(game).get('/admin/teams', {})['total']
+    @staticmethod
+    def get_number_pages(number):
+        """Return number of pages
 
-    def get_number_players(self, game: Games):
-        """ Returns the number of players in the chosen game """
-        return self.__get_game(game).get('/admin/players', {})['total']
+        :param number: number of items to paginate
+        :raise ParameterException: if parameter is negative
 
-    def get_number_players_in_team(self, game: Games, team_key):
-        """ Returns the number of players in the chosen game """
-        return self.__get_game(game).get('/admin/teams/' + team_key + '/members', {})['total']
+        Pages refers to pagination
+        Every page has 100 item, so:
+        number = 100 -> return 1
+        number = 101 -> return 2
+        """
+        logger = MigrationLogger.get_instance()
+        logger.debug("get_number_pages called")
 
-    def get_game_id(self, game: Games) -> str:
+        if number < 0:
+            raise ParameterException("Parameter can't be negative")
+
+        division_res = int(number / 100)
+
+        return division_res if number % 100 == 0 else division_res + 1
+
+    @staticmethod
+    def raise_empty_parameter_exception(parameters):
+        """Raise an exception if one parameter is empty
+
+        :param list parameters: list of parameters to check
+        :raise ParameterException
+        """
+        logger = MigrationLogger.get_instance()
+
+        for par in parameters:
+            if not par:
+                logger.warning("parameters: " + str(parameters))
+
+                raise ParameterException("Parameter can't be empty")
+
+    @staticmethod
+    def get_playoff_client(client_id, client_secret):
+        """Return Playoff game instance given his client id and client secret
+
+        :param client_id: Playoff game client id
+        :param client_secret: Playoff game client secret
+        :return: Playoff game instance
+        """
+        Utility.raise_empty_parameter_exception([client_id, client_secret])
+
+        logger = MigrationLogger.get_instance()
+        logger.info("A new playoff client will be created...")
+
+        from pathlib import Path
+        env_path = Path('.') / '.env'
+        load_dotenv(dotenv_path=env_path)
+
+        return Playoff(
+            client_id=os.environ[client_id],
+            client_secret=os.environ[client_secret],
+            type='client',
+            allow_unsecure=True
+        )
+
+
+# =======================
+# DESIGN MANIPULATION CLASS
+# =======================
+
+
+class GetPlayoffDesign(object):
+    """Class that make GET call via Playoff client to retrieve design from
+    the Playoff game
+    """
+
+    def __init__(self, game: Playoff):
+        self.game = game
+        self.logger = MigrationLogger.get_instance()
+
+    def get_teams_design(self):
+        """Return a list containing all teams design"""
+        self.logger.debug("calling playoff for teams design")
+
+        return self.game.get(Constant.DESIGN_TEAMS, {})
+
+    def get_single_team_design(self, team_id):
+        """Return design of the chosen team
+
+        :param str team_id: id of the team
+        """
+        Utility.raise_empty_parameter_exception([team_id])
+
+        self.logger.debug("returning " + team_id + " design")
+
+        return self.game.get(Constant.DESIGN_TEAMS + team_id, {})
+
+    def get_metrics_design(self):
+        """Return a list containing all metrics design"""
+        self.logger.debug("calling playoff for metrics design")
+
+        return self.game.get(Constant.DESIGN_METRICS, {})
+
+    def get_single_metric_design(self, metric_id):
+        """Return design of the chosen metric
+
+        :param str metric_id: id of metric
+        """
+        Utility.raise_empty_parameter_exception([metric_id])
+
+        self.logger.debug("returning " + metric_id + " design")
+
+        return self.game.get(Constant.DESIGN_METRICS + metric_id, {})
+
+    def get_actions_design(self):
+        """Return a list containing all actions design"""
+        self.logger.debug("calling playoff for actions design")
+
+        return self.game.get(Constant.DESIGN_ACTIONS, {})
+
+    def get_single_action_design(self, action_id):
+        """Return design of the chosen action
+
+        :param str action_id: id of action
+        """
+        Utility.raise_empty_parameter_exception([action_id])
+
+        self.logger.debug("returning " + action_id + " design")
+
+        return self.game.get(Constant.DESIGN_ACTIONS + action_id, {})
+
+    def get_leaderboards_design(self):
+        """Return a list of dict containing leaderboards design id and name"""
+        self.logger.debug("calling playoff for leaderboards design")
+
+        return self.game.get(Constant.DESIGN_LEADERBOARDS, {})
+
+    def get_single_leaderboard_design(self, leaderboard_id):
+        """Return design of the chosen leaderboard
+
+        :param str leaderboard_id: id of leaderboard
+        """
+        Utility.raise_empty_parameter_exception([leaderboard_id])
+
+        self.logger.debug("returning " + leaderboard_id + " design")
+
+        return self.game.get(Constant.DESIGN_LEADERBOARDS + leaderboard_id, {})
+
+
+class PostPlayoffDesign(object):
+    """Class that make POST call via Playoff client to create design
+    in the Playoff game
+    """
+    def __init__(self, game: Playoff):
+        self.game = game
+        self.logger = MigrationLogger.get_instance()
+
+    def create_team_design(self, design_data):
+        """Create a team design
+
+        :param dict design_data: info necessary to create a team design
+        :raise ParameterException: if parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([design_data])
+
+        self.logger.debug("creating team design")
+
+        self.game.post(Constant.DESIGN_TEAMS, {}, design_data)
+
+        self.logger.debug("team design created")
+
+    def create_metric_design(self, design_data):
+        """Create a metric design
+
+        :param dict design_data: info necessary to create a metric design
+        :raise ParameterException: if parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([design_data])
+
+        self.logger.debug("creating metric design")
+
+        self.game.post(Constant.DESIGN_METRICS, {}, design_data)
+
+        self.logger.debug("team design created")
+
+    def create_action_design(self, design_data):
+        """Create a action design
+
+        :param dict design_data: info necessary to create an action design
+        :raise ParameterException: if parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([design_data])
+
+        self.logger.debug("creating action design")
+
+        self.game.post(Constant.DESIGN_ACTIONS, {}, design_data)
+
+        self.logger.debug("action design created")
+
+    def create_leaderboard_design(self, design_data):
+        """Create a leaderboard design
+
+        :param dict design_data: info necessary to create an leaderboard design
+        :raise ParameterException: if parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([design_data])
+
+        self.logger.debug("creating leaderboard design")
+
+        self.game.post(Constant.DESIGN_LEADERBOARDS, {}, design_data)
+
+        self.logger.debug("leaderboard design created")
+
+
+class DeletePlayoffDesign(object):
+    """Class that make DELETE call via Playoff client to erase design
+    from the Playoff game
+    """
+
+    def __init__(self, game: Playoff):
+        self.game = game
+        self.design_getter = GetPlayoffDesign(game)
+        self.logger = MigrationLogger.get_instance()
+
+    def delete_single_team_design(self, team_id):
+        """Delete chosen team_id from the game
+
+        :param str team_id: team id to delete
+        :raise ParameterException: if parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([team_id])
+
+        self.logger.debug("deleting " + team_id + " design")
+
+        self.game.delete(Constant.DESIGN_TEAMS + team_id, {})
+
+    def delete_single_metric_design(self, metric_id):
+        """Delete chosen team_id from the game
+
+        :param str metric_id: team id to delete
+        :raise ParameterException: if parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([metric_id])
+
+        self.logger.debug("deleting " + metric_id + " design")
+
+        self.game.delete(Constant.DESIGN_METRICS + metric_id, {})
+
+    def delete_single_action_design(self, action_id):
+        """Delete chosen team_id from the game
+
+        :param str action_id: team id to delete
+        :raise ParameterException: if parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([action_id])
+
+        self.logger.debug("deleting " + action_id + " design")
+
+        self.game.delete(Constant.DESIGN_ACTIONS + action_id, {})
+
+    def delete_single_leaderboard_design(self, leaderboard_id):
+        """Delete chosen team_id from the game
+
+        :param str leaderboard_id: team id to delete
+        :raise ParameterException: if parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([leaderboard_id])
+
+        self.logger.debug("deleting " + leaderboard_id + " design")
+
+        self.game.delete(Constant.DESIGN_LEADERBOARDS + leaderboard_id, {})
+
+    def delete_teams_design(self):
+        """Delete teams design"""
+        teams_design = self.design_getter.get_teams_design()
+        teams_count = str(len(teams_design))
+
+        self.logger.info(teams_count + " teams design will be deleted")
+        index = 0
+
+        for team in teams_design:
+            self.delete_single_team_design(team['id'])
+
+            index += 1
+            self.logger.debug("team " + str(index) + " of " + teams_count +
+                              " deleted")
+
+        self.logger.info("teams deleted")
+
+    def delete_metrics_design(self):
+        """Delete metrics design"""
+        metrics_design = self.design_getter.get_metrics_design()
+        metrics_count = str(len(metrics_design))
+
+        self.logger.info(metrics_count + " metrics design will be deleted")
+        index = 0
+
+        for metric in metrics_design:
+            self.delete_single_metric_design(metric['id'])
+
+            index += 1
+            self.logger.debug("metric " + str(index) + " of " + metrics_count +
+                              " deleted")
+
+        self.logger.info("metrics deleted")
+
+    def delete_actions_design(self):
+        """Delete actions design"""
+        actions_design = self.design_getter.get_actions_design()
+        actions_count = str(len(actions_design))
+
+        self.logger.info(actions_count + " actions design will be deleted")
+        index = 0
+
+        for action in actions_design:
+            self.delete_single_action_design(action['id'])
+
+            index += 1
+            self.logger.debug("action " + str(index) + " of " + actions_count +
+                              " deleted")
+
+        self.logger.info("actions deleted")
+
+    def delete_leaderboards_design(self):
+        """Delete leaderboards design"""
+        leaderboards_design = self.design_getter.get_leaderboards_design()
+        leaderboards_count = str(len(leaderboards_design))
+
+        self.logger.info(leaderboards_count + " leaderboards design will be "
+                                              "deleted")
+        index = 0
+
+        for leaderboard in leaderboards_design:
+            self.delete_single_leaderboard_design(leaderboard['id'])
+
+            index += 1
+            self.logger.debug("leaderboard " + str(index) + " of " +
+                              leaderboards_count + " deleted")
+
+        self.logger.info("leaderboards deleted")
+
+    def delete_all_design(self):
+        """Delete all design from the game"""
+        self.logger.info("deleting all design")
+
+        self.delete_leaderboards_design()
+        self.delete_actions_design()
+        self.delete_metrics_design()
+        self.delete_teams_design()
+
+        self.logger.info("all design deleted")
+
+
+# =======================
+# DATA MANIPULATION CLASS
+# =======================
+
+class GetPlayoffData(object):
+    """Class that make GET call via Playoff client to retrieve data from
+    the Playoff game
+    """
+
+    def __init__(self, game: Playoff):
+        self.game = game
+        self.logger = MigrationLogger.get_instance()
+
+    # ==============
+    # COUNT METHODS
+    # ==============
+
+    def get_team_count(self):
+        """Return number of teams in the game"""
+        self.logger.debug("returning number of teams")
+
+        return self.game.get(Constant.ADMIN_TEAMS, {})[Constant.TOTAL]
+
+    def get_players_count(self):
+        """Returns number of players in the game"""
+        self.logger.debug("returning number of players")
+
+        return self.game.get(Constant.ADMIN_PLAYERS, {})[Constant.TOTAL]
+
+    def get_players_count_in_team(self, team_id):
+        """Return number of players of the chosen team
+
+        :param str team_id: containing id of a team
+        :raise ParameterException: if parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([team_id])
+
+        self.logger.debug("returning number of players in team: " + team_id)
+
+        return self.game.get(Constant.ADMIN_TEAMS + team_id +
+                             '/members', {})[Constant.TOTAL]
+
+    # ==============
+    # INFO METHODS
+    # ==============
+
+    def get_game_id(self):
         """ Returns game id of the chosen game """
-        return self.__get_game(game).get('/admin')["game"]["id"]
+        self.logger.debug("returning game_id")
 
-    def get_teams_by_id(self, game: Games):
-        """ Returns all the teams ids  """
-        self._logger.info(self.get_teams_by_id.__name__ + " called")
+        return self.game.get(Constant.ADMIN_ROOT)["game"]["id"]
 
+    def get_teams_by_id(self):
+        """Returns a list of teams id"""
         teams_id = []
-        game_instance = self.__get_game(game)
-        number_teams = self.get_number_teams(game)
-        number_pages = PlayoffMigration.__get_number_pages(number_teams)
+        number_teams = self.get_team_count()
+        number_pages = Utility.get_number_pages(number_teams)
+
+        self.logger.info("preparing list of teams id")
 
         for count in range(number_pages):
 
-            teams = game_instance.get('/admin/teams', {"skip": str(count * 100), "limit": "100"})
+            teams = self.game.get(Constant.ADMIN_TEAMS,
+                                  {"skip": str(count * 100), "limit": "100"})
 
-            for item in teams['data']:
-                teams_id.append(item['id'])
+            for team in teams['data']:
+                teams_id.append(team['id'])
+
+                self.logger.debug(team['id'] + "added to list")
+
+        self.logger.info("returning list of teams id")
 
         return teams_id
 
-    def get_players_by_id(self, game: Games):
-        """ Returns all the ids of the player in the chosen game """
-        self._logger.info(self.get_players_by_id.__name__ + " called")
+    def get_team_info(self, team_id):
+        """Return information of the chosen team
 
-        players_id = {}
-        count_key = 0
-        game_instance = self.__get_game(game)
-        number_players = self.get_number_players(game)
-        number_pages = PlayoffMigration.__get_number_pages(number_players)  # pagination management
+        :param str team_id: containing id of a team
+        :raise ParameterException: if parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([team_id])
+
+        self.logger.debug("returning info of team: " + team_id)
+
+        return self.game.get(Constant.ADMIN_TEAMS + team_id, {})
+
+    def get_players_by_id(self):
+        """Return a list of players id"""
+        players_id = []
+        number_players = self.get_players_count()
+        number_pages = Utility.get_number_pages(number_players)
+
+        self.logger.info("preparing list of players id")
 
         for count in range(number_pages):
-            players = game_instance.get('/admin/players', {"skip": str(count * 100), "limit": "100"})
+            players = self.game.get(Constant.ADMIN_PLAYERS,
+                                    {"skip": str(count * 100), "limit": "100"})
 
-            for item in players['data']:
-                players_id.update({count_key: item['id']})
-                count_key += 1
+            for player in players['data']:
+                players_id.append(player['id'])
+
+                self.logger.debug(player['id'] + "added to list")
+
+        self.logger.info("returning list of players id")
 
         return players_id
 
-    def get_players_by_teams(self, game: Games):
-        """ Returns all the players grouped by each team of the selected game """
-        self._logger.info(self.get_players_by_teams.__name__ + " called")
+    def get_player_profile(self, player_id):
+        """Return profile data of the chosen player
 
-        teams_by_id = self.get_teams_by_id(game)
-        players_by_teams = {}
+        :param str player_id: containing id of a player
+        :raise ParameterException: if parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([player_id])
 
-        for team in teams_by_id:
-            count_key = 0
-            game_instance = self.__get_game(game)
-            number_players_in_team = self.get_number_players_in_team(game, team)
-            number_pages = PlayoffMigration.__get_number_pages(number_players_in_team)  # pagination management
+        self.logger.debug("returning info of player: " + player_id)
 
-            for count in range(number_pages):
-                players_in_team = game_instance.get('/admin/teams/' + team + '/members',
-                                                    {"skip": str(count * 100), "limit": "100"})
+        return self.game.get(Constant.ADMIN_PLAYERS + player_id, {})
 
-                pl_team = {}
-                for item in players_in_team['data']:
-                    pl_team.update({count_key: item['id']})
-                    count_key += 1
+    def get_player_feed(self, player_id):
+        """Return a list of feed of the chosen player
 
-                players_by_teams.update({team: pl_team})
+        :param str player_id: player id
+        :raise ParameterException: if parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([player_id])
 
-        return players_by_teams
+        self.logger.debug("returning feed of player: " + player_id)
 
-    def get_player_feed(self, game: Games, player_id):
-        """ Return a list containing feed of the chosen player """
-        self._logger.info(self.get_player_feed.__name__ + " called")
+        player_feed = self.game.get(Constant.ADMIN_PLAYERS + player_id +
+                                    "/activity", {"start": "0"})
 
-        player_feed = self.__get_game(game).get("/admin/players/" + player_id + "/activity", {"start": "0"})
-
-        if player_feed is None:  # if a player have no feed, GET method return None
+        if player_feed is None:
             return []
 
         return player_feed
 
-    def get_teams_design(self, game: Games):
-        """ Return teams design of chosen game """
-        return self.__get_game(game).get('/design/versions/latest/teams', {})
+    def get_leaderboard(self, leaderboard_id):
+        """Return chosen leaderboard
 
-    def get_single_team_design(self, game: Games, team_id):
-        """ Return design of the chosen team in the chosen game """
-        return self.__get_game(game).get('/design/versions/latest/teams/' + team_id, {})
+        :param str leaderboard_id: chosen leaderboard
+        :raise: ParameterException: when parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([leaderboard_id])
 
-    def get_team_instance_info(self, game: Games, team_id):
-        """ Return team instance information """
-        return self.__get_game(game).get('/admin/teams/' + team_id, {})
+        self.logger.debug("returning leaderboard: " + leaderboard_id)
 
-    def get_player_profile(self, game: Games, player_id):
-        """ Returns the profile data of the selected player """
-        return self.__get_game(game).get("/admin/players/" + player_id, {})
+        data = {
+            "player_id": Constant.PLAYER_ID,
+            "cycle": Constant.CYCLE,
+            "limit": Constant.BIG_NUMBER
+        }
 
-    def get_actions_design(self, game: Games):
-        """ Returns actions design of the chosen game """
-        return self.__get_game(game).get("/design/versions/latest/actions", {})
+        return self.game.get(Constant.RUNTIME_LEADERBOARDS + leaderboard_id,
+                             data)
 
-    def get_single_action_design(self, game: Games, action_id):
-        """ Returns a single design of the chosen action in the chosen game """
-        return self.__get_game(game).get("/design/versions/latest/actions/" + action_id, {})
 
-    def get_leaderboards_by_id(self, game: Games):
-        """ Returns leaderboards by id of the selected game """
-        leaderboards_id = []
-        leaderboards = self.__get_game(game).get('/design/versions/latest/leaderboards', {})
+class PostPlayoffData(object):
+    """Class that make POST call via Playoff client to create instances
+    in the Playoff game
+    """
 
-        for item in leaderboards:
-            leaderboards_id.append(item['id'])
+    def __init__(self, game: Playoff):
+        self.game = game
+        self.logger = MigrationLogger.get_instance()
 
-        return leaderboards_id
+    def create_team(self, team_data):
+        """Create a team
 
-    def get_leaderboard_scope(self, game: Games, leaderboard):
-        """ Return scope of chosen leaderboard in the chosen game """
-        return self.__get_game(game).get('/design/versions/latest/leaderboards/' + leaderboard, {})['scope']
+        :param dict team_data: team info necessary to create a team
+        :raise ParameterException: if parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([team_data])
 
-    # TODO : find a way to not use fixed "player_id"
-    def get_leaderboards_players(self, game: Games):
-            """ Returns every player and his score, for each leaderboard of the chosen game """
-            self._logger.info(self.get_leaderboards_players.__name__ + " called")
+        self.logger.debug("creating team " + team_data['id'])
 
-            leaderboards_by_id = self.get_leaderboards_by_id(game)
-            leaderboards_content = {}
+        self.game.post(Constant.ADMIN_TEAMS, {}, team_data)
 
-            for item in leaderboards_by_id:
-                leaderboards_scope = self.get_leaderboard_scope(game, item)
-                if leaderboards_scope['type'] == 'team_instance':
-                    scope_type = leaderboards_scope['id']
-                    board_content = self.__get_game(game).get('/runtime/leaderboards/'
-                                                              + item, {"cycle": "alltime",
-                                                                       "team_instance_id": scope_type,
-                                                                       "player_id": "atomasse",
-                                                                       "limit": str(10 ** 12)})
-                    leaderboards_content.update({item: board_content})
+        self.logger.debug("team created")
 
-                else:
-                    board_content = self.__get_game(game).get('/runtime/leaderboards/'
-                                                              + item, {"cycle": "alltime",
-                                                                       "player_id": "atomasse",
-                                                                       "limit": str(10 ** 12)})
-                    leaderboards_content.update({item: board_content})
+    def create_player(self, player_data):
+        """Create a player
 
-            return leaderboards_content
+        :param dict player_data: player info necessary to create a player
+        :raise ParameterException: if parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([player_data])
 
-    def get_players_with_score_0(self, game: Games):
-            """ Return a list containing all the id of the players who have a 0 score in a leaderboard """
-            self._logger.info(self.get_players_with_score_0.__name__ + " called")
+        self.logger.debug("creating player " + player_data['id'])
 
-            players_zero = []
-            leaderboards_players = self.get_leaderboards_players(game)
+        self.game.post(Constant.ADMIN_PLAYERS, {}, player_data)
 
-            for k, v in leaderboards_players.items():
-                for player in v['data']:
-                    if player['score'] == '0':
-                        players_zero.append(player['player']['id'])
+        self.logger.debug("player created")
 
-            players_zero_def = []
-            for item in players_zero:  # removal of the duplicates
-                if item not in players_zero_def:
-                    players_zero_def.append(item)
+    def join_team(self, team_id, data):
+        """Join a team
 
-            return players_zero_def
+        :param str team_id: team id to join
+        :param dict data: data necessary to join a team
+        :raise ParameterException: if a parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([team_id, data])
 
-    def get_single_leaderboard_design(self, game: Games, leaderboard_id):
-        """ Returns a single design of the chosen leaderboard in the chosen game """
-        return self.__get_game(game).get("/design/versions/latest/leaderboards/" + leaderboard_id, {})
+        self.logger.debug("join team " + team_id)
 
-    def get_metrics_design_id(self, game: Games):
-        """ Returns metrics design id """
-        return self.__get_game(game).get("/design/versions/latest/metrics", {})
+        self.game.post(Constant.ADMIN_TEAMS + team_id + "/join", {}, data)
 
-    def get_single_metric_design(self, game: Games, metric_id):
-        """ Returns design of the chosen metric """
-        return self.__get_game(game).get("/design/versions/latest/metrics/" + metric_id, {})
+        self.logger.debug("team joined")
 
-    # +++++++++++++++++++
-    # INFORMATION ERASERS
+    def take_action(self, action_id, player_id, data):
+        """Take an action
 
-    def delete_teams_design(self, game: Games):
-        """ Delete team designs in chosen game """
-        self._logger.info(self.delete_teams_design.__name__ + " called")
+        :param str action_id: action id to take
+        :param dict player_id: player id that take action
+        :param dict data: data necessary to take action
+        :raise ParameterException: if a parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([action_id, player_id, data])
 
-        teams_design = self.get_teams_design(game)
+        self.logger.debug("taking action " + action_id + " by " +
+                          player_id['player_id'])
 
-        for team in teams_design:
-            self.__get_game(game).delete('/design/versions/latest/teams/' + team['id'], {})
+        self.game.post(Constant.RUNTIME_ACTION + action_id + "/play",
+                       player_id, data)
 
-    def delete_teams_instances(self, game: Games):
-        """ Delete teams instances in chosen game """
-        self._logger.info(self.delete_teams_instances.__name__ + " called")
+        self.logger.debug("action taken")
 
-        teams_instance = self.get_teams_by_id(game)
 
-        for team in teams_instance:
-            self.__get_game(game).delete('/admin/teams/' + team, {})
+class DeletePlayoffData(object):
+    """Class that make DELETE call via Playoff client to erase data
+    from the Playoff game
+    """
 
-    def delete_player_instances(self, game: Games):
-        """ Deletes all the player instances from the selected game"""
-        self._logger.info(self.delete_player_instances.__name__ + " called")
+    def __init__(self, game: Playoff):
+        self.game = game
+        self.data_getter = GetPlayoffData(game)
+        self.logger = MigrationLogger.get_instance()
 
-        players_instance = self.get_players_by_id(game)
-        for player in players_instance:
-            self.__get_game(game).delete('/admin/players/' + players_instance.get(player), {})
+    def delete_single_team(self, team_id):
+        """Delete chosen team
 
-    def delete_actions_design(self, game: Games):
-        """ Delete actions design in chosen game """
-        self._logger.info(self.delete_actions_design.__name__ + " called")
+        :param str team_id: team id to destroy
+        :raise ParameterException: if parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([team_id])
 
-        actions_design = self.get_actions_design(game)
+        self.logger.debug("team " + team_id + " will be deleted")
 
-        for action in actions_design:
-            self.__get_game(game).delete("/design/versions/latest/actions/" + action['id'], {})
+        self.game.delete(Constant.ADMIN_TEAMS + team_id, {})
 
-    def delete_leaderboards_design(self, game: Games):
-        """ Delete leaderboards design in chosen game """
-        self._logger.info(self.delete_leaderboards_design.__name__ + " called")
+        self.logger.debug("team deleted")
 
-        leaderboards_design = self.get_leaderboards_by_id(game)
+    def delete_single_player(self, player_id):
+        """Delete chosen player
 
-        for item in leaderboards_design:
-            self.__get_game(game).delete("/design/versions/latest/leaderboards/" + item, {})
+        :param str player_id: player id to destroy
+        :raise ParameterException: if parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([player_id])
 
-    def delete_metrics_design(self, game: Games):
-        """ Deletes metrics design in the chosen game"""
-        self._logger.info(self.delete_metrics_design.__name__ + " called")
+        self.logger.debug("player " + player_id + " will be deleted")
 
-        metrics_design_id = self.get_metrics_design_id(game)
+        self.game.delete(Constant.ADMIN_PLAYERS + player_id, {})
 
-        for item in metrics_design_id:
-            self.__get_game(game).delete("/design/versions/latest/metrics/" + item['id'], {})
+        self.logger.debug("player deleted")
 
-    def delete_all_design(self, game: Games):
-        """Deletes every design from the chosen game"""
-        self._logger.info("Deleting design...")
+    def delete_teams(self):
+        """Delete all teams"""
+        teams_by_id = self.data_getter.get_teams_by_id()
+        teams_count = str(len(teams_by_id))
 
-        self.delete_leaderboards_design(game)
-        self.delete_actions_design(game)
-        self.delete_metrics_design(game)
-        self.delete_teams_design(game)
-
-        self._logger.info("Deleted design")
-
-    def delete_all_istances(self, game: Games):
-        """Deletes every istances from the chosen game"""
-        self._logger.info("Deleting instances...")
-
-        self.delete_player_instances(game)
-        self.delete_teams_instances(game)
-
-        self._logger.info("Deleted instances")
-
-    # ++++++++++++++++++++++++
-    # MIGRATION METHODS
-
-    def migrate_teams_design(self, game: Games):
-        """ Migrate teams design from original game to the cloned one """
-        self._logger.info(self.migrate_teams_design.__name__ + " called")
-
-        teams_design = self.get_teams_design(Games.original)
-
-        for team in teams_design:
-            single_team_design = self.get_single_team_design(Games.original, team['id'])
-
-            # TODO : check if it's necessary
-            # json parameter for post request
-            cloned_single_team_design = {
-                'name': single_team_design['name'],
-                'id': single_team_design['id'],
-                'permissions': single_team_design['permissions'],
-                'creator_roles': single_team_design['creator_roles'],
-                'settings': single_team_design['settings'],
-                '_hues': single_team_design['_hues']
-            }
-
-            self.__get_game(game).post('/design/versions/latest/teams', {}, cloned_single_team_design)
-
-    def migrate_teams_instances(self, game: Games):
-        """ Migrate teams instances from original game to the cloned one """
-        self._logger.info(self.migrate_teams_instances.__name__ + " called")
-
-        teams_by_id = self.get_teams_by_id(Games.original)
+        self.logger.info(teams_count + " teams will be deleted")
+        index = 0
 
         for team in teams_by_id:
-            team_instance_info = self.get_team_instance_info(Games.original, team)
+            self.delete_single_team(team)
 
-            # TODO : check if it's necessary
-            cloned_team_instance_info = {
-                'id': team_instance_info['id'],
-                'name': team_instance_info['name'],
-                'access': team_instance_info['access'],
-                'definition': team_instance_info['definition']['id']
-            }
+            index += 1
+            self.logger.debug("team " + str(index) + " of " + teams_count +
+                              " deleted")
 
-            self.__get_game(game).post('/admin/teams', {}, cloned_team_instance_info)
+        self.logger.info("teams deleted")
 
-    def migrate_players(self, game: Games):
-        """ Migrates the player instances from the original game to the cloned one """
-        self._logger.info(self.migrate_players.__name__ + " called")
+    def delete_players(self):
+        """Delete all players"""
+        players_by_id = self.data_getter.get_players_by_id()
+        players_count = str(len(players_by_id))
 
-        players_by_id = self.get_players_by_id(Games.original)
+        self.logger.info(players_count + " players will be deleted")
+        index = 0
 
         for player in players_by_id:
-            player_instance_info = self.get_player_profile(Games.original, players_by_id.get(player))
+            self.delete_single_player(player)
 
-            cloned_player_instance_info = {
-                'id': str(player_instance_info['id']),
-                'alias': str(player_instance_info['alias'])}
+            index += 1
+            self.logger.debug("player " + str(index) + " of " + players_count +
+                              " deleted")
 
-            self.__get_game(game).post('/admin/players', {}, cloned_player_instance_info)
+        self.logger.info("players deleted")
 
-    def migrate_players_in_team(self, game: Games):
-        """ Migrates players from team in original game to the cloned one """
-        self._logger.info(self.migrate_players_in_team.__name__ + " called")
+    def delete_all_data(self):
+        """Delete all data from the game"""
+        self.logger.info("deleting data")
 
-        players_by_id = self.get_players_by_id(Games.original)
+        self.delete_players()
+        self.delete_teams()
 
-        for key in players_by_id:
-            player_id = players_by_id.get(key)
-            player_profile = self.get_player_profile(Games.original, player_id)
+        self.logger.info("data deleted")
 
-            for team in player_profile['teams']:
-                cloned_team_player = {
-                    "requested_roles": {
-                        team['roles'][0]: True
-                    },
-                    "player_id": player_id
-                }
-                self.__get_game(game).post("/admin/teams/" + team['id'] + "/join", {}, cloned_team_player)
 
-    def migrate_metrics_design(self, game: Games):
-        """ Migrates metrics design from original game to the cloned one """
-        self._logger.info(self.migrate_metrics_design.__name__ + " called")
+# =======================
+# MIGRATION CLASS
+# =======================
 
-        metrics_design_id = self.get_metrics_design_id(Games.original)
+class PlayoffMigrationData(object):
+    """Class that make a migration of data from a Playoff game to an other"""
 
-        for item in metrics_design_id:
-            single_metric_design = self.get_single_metric_design(Games.original, item['id'])
+    def __init__(self, original_client, cloned_client):
+        original = original_client
 
-            input_metric_design = {
-                "id": single_metric_design['id'],
-                "name": single_metric_design['name'],
-                "type": single_metric_design['type'],
-                "constraints": single_metric_design['constraints']
+        to_clone = cloned_client
+
+        self.data_getter = GetPlayoffData(original)
+        self.data_destroyer = DeletePlayoffData(to_clone)
+        self.data_creator = PostPlayoffData(to_clone)
+        self.logger = MigrationLogger.get_instance()
+
+    def migrate_teams(self):
+        """Migrate teams"""
+        self.logger.info("migrating teams")
+
+        self.data_destroyer.delete_teams()
+
+        teams_by_id = self.data_getter.get_teams_by_id()
+
+        for team in teams_by_id:
+            self.logger.debug("migrating team " + team)
+
+            team_data = self.data_getter.get_team_info(team)
+
+            creation_data = {
+                "id": team_data["id"],
+                "name": team_data["name"],
+                "access": team_data["access"],
+                "definition": team_data["definition"]["id"]
             }
 
-            self.__get_game(game).post("/design/versions/latest/metrics", {}, input_metric_design)
+            self.data_creator.create_team(creation_data)
 
-    def migrate_action_design(self, game: Games):
-        """ Migrates actions design from original game to the cloned one """
-        self._logger.info(self.migrate_action_design.__name__ + " called")
+        self.logger.info("teams migration finished")
 
-        actions_design = self.get_actions_design(Games.original)
+    def migrate_player_data(self, player_data):
+        """Migrate players profile data
+
+        :param dict player_data: player profile data
+        :raise ParameterException: if a parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([player_data])
+
+        self.logger.debug("migrate player data")
+
+        creation_data = {
+            "id": player_data["id"],
+            "alias": player_data["alias"]
+        }
+
+        self.data_creator.create_player(creation_data)
+
+    def migrate_player_in_teams(self, player_data):
+        """Migrate player in teams
+
+        :param dict player_data: player profile data
+        :raise ParameterException: if a parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([player_data])
+
+        self.logger.debug("migrate player in teams")
+
+        for team in player_data["teams"]:
+            data = {
+                "requested_roles": {},
+                "player_id": player_data["id"]
+            }
+
+            for role in team['roles']:
+                data['requested_roles'].update({role: True})
+
+            self.data_creator.join_team(team["id"], data)
+
+    def migrate_player_feed(self, player_id, player_feed):
+        """Migrate player feed
+
+        :param dict player_id: player id in dict format
+        :param dict player_feed: player feed (can be empty)
+        :raise ParameterException: if player_id is empty
+        """
+        Utility.raise_empty_parameter_exception([player_id])
+
+        feed_count = str(len(player_feed))
+        index = 0
+
+        self.logger.debug("migrating " + feed_count + " feed of player "
+                          + player_id['player_id'])
+
+        for feed in player_feed:
+
+            if feed["event"] == "action":
+                action_id = feed['action']['id']
+                data = {
+                    "variables": feed['action']['vars'],
+                    "scopes": feed['scopes']
+                }
+
+                self.data_creator.take_action(action_id, player_id, data)
+
+            index += 1
+            self.logger.debug("migrated " + str(index) + " of " + feed_count +
+                              " feed")
+
+        self.logger.debug("feed migration finished")
+
+    def migrate_players(self):
+        """Migrate players"""
+        self.logger.info("migrating players")
+
+        self.data_destroyer.delete_players()
+
+        players_by_id = self.data_getter.get_players_by_id()
+
+        for player in players_by_id:
+            self.logger.debug("migrating player " + player)
+
+            player_data = self.data_getter.get_player_profile(player)
+            player_feed = self.data_getter.get_player_feed(player)
+            player_id = {"player_id": player}
+
+            self.migrate_player_data(player_data)
+            self.migrate_player_in_teams(player_data)
+            self.migrate_player_feed(player_id, player_feed)
+
+        self.logger.info("players migration finished")
+
+    def migrate_all_data(self):
+        """Migrate all data"""
+        self.logger.info("starting data migration")
+
+        self.migrate_teams()
+        self.migrate_players()
+
+        self.logger.info("data migration finished")
+
+
+class PlayoffMigrationDesign(object):
+    """Class that make a migration of design from a Playoff game to an other"""
+
+    def __init__(self, original_client, cloned_client):
+        original = original_client
+
+        to_clone = cloned_client
+
+        self.design_getter = GetPlayoffDesign(original)
+        self.design_destroyer = DeletePlayoffDesign(to_clone)
+        self.design_creator = PostPlayoffDesign(to_clone)
+        self.logger = MigrationLogger.get_instance()
+
+    def migrate_teams_design(self):
+        """Migrate teams design"""
+        self.logger.info("migrating teams design")
+
+        teams_design = self.design_getter.get_teams_design()
+
+        self.design_destroyer.delete_teams_design()
+
+        for team in teams_design:
+            self.logger.debug("migrating team design " + team['id'])
+
+            design_team = self.design_getter.get_single_team_design(team['id'])
+
+            team_data = {
+                'name': design_team['name'],
+                'id': design_team['id'],
+                'permissions': design_team['permissions'],
+                'creator_roles': design_team['creator_roles'],
+                'settings': design_team['settings'],
+                '_hues': design_team['_hues']
+            }
+
+            if 'description' in design_team.keys():
+                team_data.update({'description': design_team['description']})
+
+            self.design_creator.create_team_design(team_data)
+
+        self.logger.info("teams design migration finished")
+
+    def migrate_metrics_design(self):
+        """Migrate metrics design"""
+        self.logger.info("migrating metrics design")
+
+        metrics_design = self.design_getter.get_metrics_design()
+
+        self.design_destroyer.delete_metrics_design()
+
+        for metric in metrics_design:
+            self.logger.debug("migrating metric design " + metric['id'])
+
+            design_metric = self.design_getter\
+                .get_single_metric_design(metric['id'])
+
+            metric_data = {
+                "id": design_metric['id'],
+                "name": design_metric['name'],
+                "type": design_metric['type'],
+                "constraints": design_metric['constraints']
+            }
+
+            if "description" in design_metric.keys():
+                metric_data.update({"description":
+                                    design_metric["description"]})
+
+            self.design_creator.create_metric_design(metric_data)
+
+        self.logger.info("metrics design migration finished")
+
+    def migrate_actions_design(self):
+        """Migrate actions design"""
+        self.logger.info("migrating actions design")
+
+        actions_design = self.design_getter.get_actions_design()
+
+        self.design_destroyer.delete_actions_design()
 
         for action in actions_design:
-            single_action_design = self.get_single_action_design(Games.original, action['id'])
+            self.logger.debug("migrating action design " + action['id'])
 
-            single_action_info = {
-                "id": single_action_design['id'],
-                "name": single_action_design['name'],
-                "requires": single_action_design['requires'],
-                "rules": single_action_design['rules'],
-                "variables": single_action_design['variables']
+            design_action = self.design_getter\
+                .get_single_action_design(action['id'])
+
+            action_data = {
+                "id": design_action['id'],
+                "name": design_action['name'],
+                "requires": design_action['requires'],
+                "rules": design_action['rules'],
+                "variables": design_action['variables'],
+                "image": design_action['image']
             }
 
-            self.__get_game(game).post("/design/versions/latest/actions", {}, single_action_info)
+            if "description" in design_action.keys():
+                action_data.update({"description":
+                                    design_action["description"]})
 
-    def migrate_players_feed(self, game: Games):
-        """Migrates players feed from original game to cloned one"""
-        self._logger.info(self.migrate_players_feed.__name__ + " called")
+            self.design_creator.create_action_design(action_data)
 
-        players_id = self.get_players_by_id(Games.original)
+        self.logger.info("actions design migration finished")
 
-        for key, player_id in players_id.items():
-            player_feed = self.get_player_feed(Games.original, player_id)
+    def migrate_leaderboards_design(self):
+        """Migrate leaderboards design"""
+        self.logger.info("migrating leaderboards design")
 
-            for item in player_feed:
-                if item['event'] == 'action':
-                    action_id = item['action']['id']
-                    variables = item['action']['vars']
-                    scopes = item['scopes']
+        leaderboards_design = self.design_getter.get_leaderboards_design()
 
-                    self.__get_game(game).post("/runtime/actions/" + action_id + "/play",
-                                                       {"player_id": player_id}, {"variables": variables,
-                                                                                  "scopes": scopes})
+        self.design_destroyer.delete_leaderboards_design()
 
-    def migrate_leaderboards_design(self, game: Games):
-        """Migrates leaderboards design from original game to cloned one"""
-        self._logger.info(self.migrate_leaderboards_design.__name__ + " called")
+        for leaderboard in leaderboards_design:
+            self.logger.debug("migrating leaderboard design " +
+                              leaderboard['id'])
 
-        leaderboards_id = self.get_leaderboards_by_id(Games.original)
+            design_leaderboard = self.design_getter\
+                .get_single_leaderboard_design(leaderboard['id'])
 
-        for id_lead in leaderboards_id:
-            single_design_lead = self.get_single_leaderboard_design(Games.original, id_lead)
-
-            boards_single_design_info = {
-                "id": single_design_lead['id'],
-                "name": single_design_lead['name'],
-                "entity_type": single_design_lead['entity_type'],
-                "scope": single_design_lead['scope'],
-                "metric": single_design_lead['metric']
+            leaderboard_data = {
+                "id": design_leaderboard['id'],
+                "name": design_leaderboard['name'],
+                "entity_type": design_leaderboard['entity_type'],
+                "scope": design_leaderboard['scope'],
+                "metric": design_leaderboard['metric'],
+                "cycles": design_leaderboard['cycles']
             }
 
-            self.__get_game(game).post("/design/versions/latest/leaderboards", {}, boards_single_design_info)
+            if "description" in design_leaderboard.keys():
+                leaderboard_data.update({"description":
+                                        design_leaderboard["description"]})
 
-    def migrate_all_design(self, game: Games):
-        """Migrates all design from original game to the cloned ones"""
-        self._logger.info("Migrating design...")
+            self.design_creator.create_leaderboard_design(leaderboard_data)
 
-        self.migrate_teams_design(game)
-        self.migrate_metrics_design(game)
-        self.migrate_action_design(game)
-        self.migrate_leaderboards_design(game)
+        self.logger.info("leaderboards design migration finished")
 
-        self._logger.info("Migrating design finished")
+    def migrate_all_design(self):
+        """Migrate all design"""
+        self.logger.info("starting design migration")
 
-    def migrate_all_istances(self, game: Games):
-        """Migrates all istances from original game to the cloned ones"""
-        self._logger.info("Migrating instances...")
+        self.migrate_teams_design()
+        self.migrate_metrics_design()
+        self.migrate_actions_design()
+        self.migrate_leaderboards_design()
 
-        self.migrate_teams_instances(game)
-        self.migrate_players(game)
-        self.migrate_players_in_team(game)
-        self.migrate_players_feed(game)
-
-        self._logger.info("Migrating instances finished")
-
-    # ++++++++++++++++++++++++
-    # SCOPED METHODS
-
-    def migrate_scoped_leaderboards_design(self, game: Games):
-        """Migrates scoped leaderboards design from original game to cloned one"""
-        self._logger.info(self.migrate_scoped_leaderboards_design.__name__ + " called")
-
-        leaderboards_id = self.get_leaderboards_by_id(Games.original)
-
-        for id_lead in leaderboards_id:
-            single_design_lead = self.get_single_leaderboard_design(Games.original, id_lead)
-
-            boards_single_design_info = {
-                "id": single_design_lead['id'],
-                "name": single_design_lead['name'],
-                "entity_type": single_design_lead['entity_type'],
-                "scope": {"type": "custom"},
-                "metric": single_design_lead['metric']
-            }
-
-            self.__get_game(game).post("/design/versions/latest/leaderboards", {}, boards_single_design_info)
-
-    def migrate_scoped_players_feed(self, game: Games):
-        """Migrates scoped players feed from original game to cloned one"""
-        self._logger.info(self.migrate_scoped_players_feed.__name__ + " called")
-
-        players_id = self.get_players_by_id(Games.original)
-
-        for key, player_id in players_id.items():
-            player_feed = self.get_player_feed(Games.original, player_id)
-            player_profile = self.get_player_profile(Games.original, player_id)
-            players_teams = player_profile["teams"]
-
-            for item in player_feed:
-                if item['event'] == 'action':
-                    action_id = item['action']['id']
-                    variables = item['action']['vars']
-                    scopes = {}
-
-                    for team in players_teams:
-                        if team["id"] == "globale":
-                            scopes = self.get_globale_scopes(player_id, action_id)
-                            break
-                        elif team["id"] == "laboratorio_somma":
-                            scopes = self.get_lab_somma_scopes(player_id)
-                            break
-
-                    if scopes == {}:
-                        scopes = item['scopes']
-
-                    self.__get_game(game).post("/runtime/actions/" + action_id + "/play",
-                                               {"player_id": player_id}, {"variables": variables, "scopes": scopes})
-
-    def migrate_all_design_scoped(self, game: Games):
-        """Migrates all design from original game to the cloned ones"""
-        self._logger.info("Migrating design...")
-
-        self.migrate_teams_design(game)
-        self.migrate_metrics_design(game)
-        self.migrate_action_design(game)
-        self.migrate_scoped_leaderboards_design(game)
-
-        self._logger.info("Migrating design finished")
-
-    def migrate_all_istances_scoped(self, game: Games):
-        """Migrates all istances from original game to the cloned ones"""
-        self._logger.info("Migrating instances...")
-
-        self.migrate_teams_instances(game)
-        self.migrate_players(game)
-        self.migrate_players_in_team(game)
-        self.migrate_scoped_players_feed(game)
-
-        self._logger.info("Migrating instances finished")
-
-    def get_globale_scopes(self, player_id, action_id):
-        return [{
-                    "id": "globale_creativita",
-                    "entity_id": player_id
-                },
-                {
-                    "id": "globale_problem_solving",
-                    "entity_id": player_id
-                },
-                {
-                    "id": "globale_logica",
-                    "entity_id": player_id
-                },
-                {
-                    "id": "globale_punti",
-                    "entity_id": player_id
-                },
-                {
-                    "id": self.ACTION_LEADERBOARD_PARSER[action_id],
-                    "entity_id": player_id
-                }]
-
-    def get_lab_somma_scopes(self, player_id):
-        return [{
-                    "id": "tra_team_creativita",
-                    "entity_id": player_id
-                },
-                {
-                    "id": "tra_team_logica",
-                    "entity_id": player_id
-                },
-                {
-                    "id": "tra_team_problem_solving",
-                    "entity_id": player_id
-                },
-                {
-                    "id": "tra_team_punti",
-                    "entity_id": player_id
-                }]
-
-    def get_scoped_leaderboard(self, game: Games, leaderboard_id):
-        game_instance = self.__get_game(game)
-
-        data = {
-            "player_id": "atomasse",
-            "cycle": "alltime",
-            "limit": 10 ** 10,
-            "scope_id": leaderboard_id
-        }
-
-        return game_instance.get("/runtime/leaderboards/" + leaderboard_id, data)
-
-    def get_leaderboard(self, game: Games, leaderboard_id):
-        game_instance = self.__get_game(game)
-
-        data = {
-            "player_id": "atomasse",
-            "cycle": "alltime",
-            "limit": 10 ** 10,
-        }
-
-        return game_instance.get("/runtime/leaderboards/" + leaderboard_id, data)
-
-
-if __name__ == '__main__':
-    p = PlayoffMigration()
-    print(p)
+        self.logger.info("design migration finished")
