@@ -1,23 +1,20 @@
 import unittest
 
-from refactor_playoff_migration import *
-from scoped_leaderboard import *
-
-from playoff import Playoff, PlayoffException
-from dotenv import load_dotenv
+from playoff_migration import *
+from leaderboard_scoped import *
 
 
 class ScopedLeaderboardTest(unittest.TestCase):
 
     def setUp(self):
         original = Utility.get_playoff_client(
-            "GAMELABNOTARGETV01_CLIENT_ID",
-            "GAMELABNOTARGETV01_CLIENT_SECRET"
+            "ORIGINAL_CLIENT_ID",
+            "ORIGINAL_CLIENT_SECRET"
         )
 
         to_clone = Utility.get_playoff_client(
-            "GAMELABCLONSCOPED2_CLIENT_ID",
-            "GAMELABCLONSCOPED2_CLIENT_SECRET"
+            "CLONED_CLIENT_ID",
+            "CLONED_CLIENT_SECRET"
         )
 
         self.scoped_client = ScopedLeaderboard()

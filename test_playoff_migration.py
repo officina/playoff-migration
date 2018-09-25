@@ -1,10 +1,8 @@
 import unittest
-from pprint import pprint
 
-from refactor_playoff_migration import *
+from playoff_migration import *
 
 from playoff import Playoff, PlayoffException
-from dotenv import load_dotenv
 
 
 class UtilityTest(unittest.TestCase):
@@ -28,8 +26,8 @@ class UtilityTest(unittest.TestCase):
                           Utility.raise_empty_parameter_exception, [[]])
 
     def test_playoff_client_factory(self):
-        client_id = "GAMELABNOTARGETV01_CLIENT_ID"
-        client_secret = "GAMELABNOTARGETV01_CLIENT_SECRET"
+        client_id = "ORIGINAL_CLIENT_ID"
+        client_secret = "ORIGINAL_CLIENT_SECRET"
 
         client = Utility.get_playoff_client(client_id, client_secret)
 
@@ -40,8 +38,8 @@ class GetPlayoffDesignTest(unittest.TestCase):
 
     def setUp(self):
         playoff_client = Utility.get_playoff_client(
-            "GAMELABNOTARGETV01_CLIENT_ID",
-            "GAMELABNOTARGETV01_CLIENT_SECRET"
+            "ORIGINAL_CLIENT_ID",
+            "ORIGINAL_CLIENT_SECRET"
         )
 
         self.design_getter = GetPlayoffDesign(playoff_client)
@@ -84,8 +82,8 @@ class PostDeletePlayoffDesignTest(unittest.TestCase):
 
     def setUp(self):
         playoff_client = Utility.get_playoff_client(
-            "GAMELABCLONSCOPED2_CLIENT_ID",
-            "GAMELABCLONSCOPED2_CLIENT_SECRET"
+            "CLONED_CLIENT_ID",
+            "CLONED_CLIENT_SECRET"
         )
 
         self.design_poster = PostPlayoffDesign(playoff_client)
@@ -306,8 +304,8 @@ class GetPlayoffDataTest(unittest.TestCase):
 
     def setUp(self):
         playoff_client = Utility.get_playoff_client(
-            "GAMELABNOTARGETV01_CLIENT_ID",
-            "GAMELABNOTARGETV01_CLIENT_SECRET"
+            "ORIGINAL_CLIENT_ID",
+            "ORIGINAL_CLIENT_SECRET"
         )
 
         self.data_getter = GetPlayoffData(playoff_client)
@@ -388,8 +386,8 @@ class PostDeletePlayoffDataTest(unittest.TestCase):
 
     def setUp(self):
         playoff_client = Utility.get_playoff_client(
-            "GAMELABCLONSCOPED2_CLIENT_ID",
-            "GAMELABCLONSCOPED2_CLIENT_SECRET"
+            "CLONED_CLIENT_ID",
+            "CLONED_CLIENT_SECRET"
         )
 
         self.data_deleter = DeletePlayoffData(playoff_client)
@@ -538,12 +536,17 @@ class PostDeletePlayoffDataTest(unittest.TestCase):
 class MigrationDataTest(unittest.TestCase):
 
     def setUp(self):
-        to_clone = Utility.get_playoff_client(
-            "GAMELABCLONSCOPED2_CLIENT_ID",
-            "GAMELABCLONSCOPED2_CLIENT_SECRET"
+        original = Utility.get_playoff_client(
+            "ORIGINAL_CLIENT_ID",
+            "ORIGINAL_CLIENT_SECRET"
         )
 
-        self.migrate_data = PlayoffMigrationData()
+        to_clone = Utility.get_playoff_client(
+            "CLONED_CLIENT_ID",
+            "CLONED_CLIENT_SECRET"
+        )
+
+        self.migrate_data = PlayoffMigrationData(original, to_clone)
         self.data_getter_cloned = GetPlayoffData(to_clone)
 
     def test1_teams_migration(self):
@@ -586,20 +589,6 @@ class MigrationDataTest(unittest.TestCase):
 
             self.migrate_data.migrate_player_feed(player_id, player_feed)
 
-            """
-            Problema nel testare i feed clonati
-            1) non posso controllare il numero in quanto prendo solo i feed con
-                campo ['event'] == 'action'
-            2) non posso controllare che le feed siano le stesse in quanto 
-                l'ordine non è lo stesso
-            3) non riesco a controllare i punteggi, in quanto alcuni
-            
-            cloned_player_data = self.data_getter_cloned.get_player_profile(
-                player)
-            self.assertEqual(player_data['scores'], 
-                             cloned_player_data['scores'])
-            """
-
         cloned_players_id = self.data_getter_cloned.get_players_by_id()
 
         self.assertEqual(origin_players_id, cloned_players_id)
@@ -608,12 +597,17 @@ class MigrationDataTest(unittest.TestCase):
 class MigrationDesignTest(unittest.TestCase):
 
     def setUp(self):
-        to_clone = Utility.get_playoff_client(
-            "GAMELABCLONSCOPED2_CLIENT_ID",
-            "GAMELABCLONSCOPED2_CLIENT_SECRET"
+        original = Utility.get_playoff_client(
+            "ORIGINAL_CLIENT_ID",
+            "ORIGINAL_CLIENT_SECRET"
         )
 
-        self.migrate_design = PlayoffMigrationDesign()
+        to_clone = Utility.get_playoff_client(
+            "CLONED_CLIENT_ID",
+            "CLONED_CLIENT_SECRET"
+        )
+
+        self.migrate_design = PlayoffMigrationDesign(original, to_clone)
         self.design_getter = GetPlayoffDesign(to_clone)
 
     def test1_teams_design_migration(self):

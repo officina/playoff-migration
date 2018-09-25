@@ -4,12 +4,8 @@ __pycache__
 .env
 
 ### .log file
-export.log
 migration.log
-creation.log
 
 ### folder
 playoff-data
 
-### other
-riassunto.txt

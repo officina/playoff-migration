@@ -1,7 +1,7 @@
 import os
 from json import dump, load
 
-from refactor_playoff_migration import GetPlayoffDesign, GetPlayoffData, \
+from playoff_migration import GetPlayoffDesign, GetPlayoffData, \
     PostPlayoffData, PostPlayoffDesign, Playoff, MigrationLogger
 
 

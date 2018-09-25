@@ -1,7 +1,5 @@
-from pprint import pprint
-
-from refactor_playoff_migration import ParameterException, \
-    PlayoffMigrationDesign, PlayoffMigrationData, Utility
+from playoff_migration import ParameterException, PlayoffMigrationDesign, \
+    PlayoffMigrationData, Utility
 
 
 class ScopedUtility(Utility):
@@ -106,9 +104,18 @@ class ScopedLeaderboard(PlayoffMigrationDesign, PlayoffMigrationData):
     """
 
     def __init__(self):
-        # super().__init__()
-        PlayoffMigrationDesign.__init__(self)
-        PlayoffMigrationData.__init__(self)
+        original = Utility.get_playoff_client(
+            "ORIGINAL_CLIENT_ID",
+            "ORIGINAL_CLIENT_SECRET"
+        )
+
+        to_clone = Utility.get_playoff_client(
+            "CLONED_CLIENT_ID",
+            "CLONED_CLIENT_SECRET"
+        )
+
+        PlayoffMigrationDesign.__init__(self, original, to_clone)
+        PlayoffMigrationData.__init__(self, original, to_clone)
 
     def migrate_leaderboards_design(self):
         """Migrate scoped leaderboards design"""
