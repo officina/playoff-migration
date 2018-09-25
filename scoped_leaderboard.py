@@ -112,11 +112,16 @@ class ScopedLeaderboard(PlayoffMigrationDesign, PlayoffMigrationData):
 
     def migrate_leaderboards_design(self):
         """Migrate scoped leaderboards design"""
+        self.logger.info("migrating scoped leaderboards design")
+
         leaderboards_id = self.design_getter.get_leaderboards_design()
 
         self.design_destroyer.delete_leaderboards_design()
 
         for leaderboard in leaderboards_id:
+            self.logger.debug("migrating scoped leaderboard design " +
+                              leaderboard['id'])
+
             single_design = self.design_getter.get_single_leaderboard_design(
                 leaderboard['id'])
 
@@ -130,6 +135,8 @@ class ScopedLeaderboard(PlayoffMigrationDesign, PlayoffMigrationData):
 
             self.design_creator.create_leaderboard_design(data)
 
+        self.logger.info("scoped leaderboards design migration finished")
+
     def migrate_player_feed(self, player_id, player_feed):
         """Migrate scoped player feed
 
@@ -138,6 +145,12 @@ class ScopedLeaderboard(PlayoffMigrationDesign, PlayoffMigrationData):
         :raise ParameterException: if a parameter is empty
         """
         ScopedUtility.raise_empty_parameter_exception([player_id, player_feed])
+
+        feed_count = str(len(player_feed))
+        index = 0
+
+        self.logger.debug("migrating " + feed_count + " scoped feed of player "
+                          + player_id['player_id'])
 
         player_data = self.data_getter.get_player_profile(
             player_id['player_id'])
@@ -169,3 +182,9 @@ class ScopedLeaderboard(PlayoffMigrationDesign, PlayoffMigrationData):
                 }
 
                 self.data_creator.take_action(action_id, player_id, data)
+
+                index += 1
+                self.logger.debug("migrated " + index + " of " + feed_count +
+                                  " scoped feed")
+
+        self.logger.debug("scoped feed migration finished")

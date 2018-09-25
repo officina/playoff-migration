@@ -818,9 +818,14 @@ class PlayoffMigrationData(object):
         """
         Utility.raise_empty_parameter_exception([player_id])
 
-        self.logger.debug("migrate feed of player " + player_id['player_id'])
+        feed_count = str(len(player_feed))
+        index = 0
+
+        self.logger.debug("migrating " + feed_count + " feed of player "
+                          + player_id['player_id'])
 
         for feed in player_feed:
+
             if feed["event"] == "action":
                 action_id = feed['action']['id']
                 data = {
@@ -829,6 +834,10 @@ class PlayoffMigrationData(object):
                 }
 
                 self.data_creator.take_action(action_id, player_id, data)
+
+            index += 1
+            self.logger.debug("migrated " + index + " of " + feed_count +
+                              " feed")
 
         self.logger.debug("feed migration finished")
 
