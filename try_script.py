@@ -4,8 +4,8 @@ import os
 from pathlib import Path
 
 from refactor_playoff_migration import *
-from scoped_leaderboard import ScopedLeaderboard
-from playoff_migration import PlayoffMigration, Games
+from scoped_leaderboard import *
+from playoff_migration import *
 from playoff_migration_file import *
 
 from playoff import Playoff
@@ -21,4 +21,6 @@ playoff_client2 = Utility.get_playoff_client(
     "GAMELABCLONSCOPED2_CLIENT_SECRET"
 )
 
+migration = PlayoffMigrationData()
 
+migration.migrate_all_data()

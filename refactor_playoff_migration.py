@@ -1,5 +1,7 @@
 import os
 from pprint import pprint
+from logging import Logger
+import logging
 
 from playoff import Playoff
 from dotenv import load_dotenv
@@ -12,6 +14,7 @@ from dotenv import load_dotenv
 class ParameterException(Exception):
     """Class that define an exception for parameters methods"""
     pass
+
 
 # =======================
 # CONVENIENT CLASS
@@ -40,6 +43,31 @@ class Constant(object):
     RUNTIME_LEADERBOARDS = "/runtime/leaderboards/"
 
 
+class MigrationLogger:
+    __instance: Logger = None
+
+    @staticmethod
+    def get_instance():
+        if MigrationLogger.__instance is None:
+            MigrationLogger()
+        return MigrationLogger.__instance
+
+    def __init__(self):
+        """ Virtually private constructor. """
+        if MigrationLogger.__instance is not None:
+            raise Exception("This class is a singleton!")
+        else:
+            MigrationLogger.__instance = logging.getLogger("migration_logger")
+            MigrationLogger.__instance.setLevel(logging.DEBUG)
+            ch = logging.FileHandler(filename="migration.logger", mode="w")
+            ch.setLevel(logging.DEBUG)
+            formatter = logging.Formatter(
+                "%(asctime)s - %(levelname)s - %(message)s",
+                "%m/%d/%Y %I:%M:%S %p")
+            ch.setFormatter(formatter)
+            MigrationLogger.__instance.addHandler(ch)
+
+
 class Utility(object):
     """Class that define some useful methods"""
 
@@ -55,6 +83,9 @@ class Utility(object):
         number = 100 -> return 1
         number = 101 -> return 2
         """
+        logger = MigrationLogger.get_instance()
+        logger.debug("get_number_pages called")
+
         if number < 0:
             raise ParameterException("Parameter can't be negative")
 
@@ -64,8 +95,12 @@ class Utility(object):
 
     @staticmethod
     def raise_empty_parameter_exception(parameters):
+        logger = MigrationLogger.get_instance()
+
         for par in parameters:
             if not par:
+                logger.warning("parameters: " + parameters)
+
                 raise ParameterException("Parameter can't be empty")
 
     @staticmethod
@@ -77,6 +112,9 @@ class Utility(object):
         :return: Playoff game instance
         """
         Utility.raise_empty_parameter_exception([client_id, client_secret])
+
+        logger = MigrationLogger.get_instance()
+        logger.info("A new playoff client will be created...")
 
         from pathlib import Path
         env_path = Path('.') / '.env'
@@ -102,9 +140,12 @@ class GetPlayoffDesign(object):
 
     def __init__(self, game: Playoff):
         self.game = game
+        self.logger = MigrationLogger.get_instance()
 
     def get_teams_design(self):
         """Return a list containing all teams design"""
+        self.logger.debug("calling playoff for teams design")
+
         return self.game.get(Constant.DESIGN_TEAMS, {})
 
     def get_single_team_design(self, team_id):
@@ -114,10 +155,14 @@ class GetPlayoffDesign(object):
         """
         Utility.raise_empty_parameter_exception([team_id])
 
+        self.logger.debug("returning " + team_id + " design")
+
         return self.game.get(Constant.DESIGN_TEAMS + team_id, {})
 
     def get_metrics_design(self):
         """Return a list containing all metrics design"""
+        self.logger.debug("calling playoff for metrics design")
+
         return self.game.get(Constant.DESIGN_METRICS, {})
 
     def get_single_metric_design(self, metric_id):
@@ -127,10 +172,14 @@ class GetPlayoffDesign(object):
         """
         Utility.raise_empty_parameter_exception([metric_id])
 
+        self.logger.debug("returning " + metric_id + " design")
+
         return self.game.get(Constant.DESIGN_METRICS + metric_id, {})
 
     def get_actions_design(self):
         """Return a list containing all actions design"""
+        self.logger.debug("calling playoff for actions design")
+
         return self.game.get(Constant.DESIGN_ACTIONS, {})
 
     def get_single_action_design(self, action_id):
@@ -140,10 +189,14 @@ class GetPlayoffDesign(object):
         """
         Utility.raise_empty_parameter_exception([action_id])
 
+        self.logger.debug("returning " + action_id + " design")
+
         return self.game.get(Constant.DESIGN_ACTIONS + action_id, {})
 
     def get_leaderboards_design(self):
         """Return a list of dict containing leaderboards design id and name"""
+        self.logger.debug("calling playoff for leaderboards design")
+
         return self.game.get(Constant.DESIGN_LEADERBOARDS, {})
 
     def get_single_leaderboard_design(self, leaderboard_id):
@@ -152,6 +205,8 @@ class GetPlayoffDesign(object):
         :param str leaderboard_id: id of leaderboard
         """
         Utility.raise_empty_parameter_exception([leaderboard_id])
+
+        self.logger.debug("returning " + leaderboard_id + " design")
 
         return self.game.get(Constant.DESIGN_LEADERBOARDS + leaderboard_id, {})
 
@@ -162,6 +217,7 @@ class PostPlayoffDesign(object):
     """
     def __init__(self, game: Playoff):
         self.game = game
+        self.logger = MigrationLogger.get_instance()
 
     def create_team_design(self, design_data):
         """Create a team design
@@ -171,7 +227,11 @@ class PostPlayoffDesign(object):
         """
         Utility.raise_empty_parameter_exception([design_data])
 
+        self.logger.debug("creating team design")
+
         self.game.post(Constant.DESIGN_TEAMS, {}, design_data)
+
+        self.logger.debug("team design created")
 
     def create_metric_design(self, design_data):
         """Create a metric design
@@ -181,7 +241,11 @@ class PostPlayoffDesign(object):
         """
         Utility.raise_empty_parameter_exception([design_data])
 
+        self.logger.debug("creating metric design")
+
         self.game.post(Constant.DESIGN_METRICS, {}, design_data)
+
+        self.logger.debug("team design created")
 
     def create_action_design(self, design_data):
         """Create a action design
@@ -191,7 +255,11 @@ class PostPlayoffDesign(object):
         """
         Utility.raise_empty_parameter_exception([design_data])
 
+        self.logger.debug("creating action design")
+
         self.game.post(Constant.DESIGN_ACTIONS, {}, design_data)
+
+        self.logger.debug("action design created")
 
     def create_leaderboard_design(self, design_data):
         """Create a leaderboard design
@@ -201,7 +269,11 @@ class PostPlayoffDesign(object):
         """
         Utility.raise_empty_parameter_exception([design_data])
 
+        self.logger.debug("creating leaderboard design")
+
         self.game.post(Constant.DESIGN_LEADERBOARDS, {}, design_data)
+
+        self.logger.debug("leaderboard design created")
 
 
 class DeletePlayoffDesign(object):
@@ -212,6 +284,7 @@ class DeletePlayoffDesign(object):
     def __init__(self, game: Playoff):
         self.game = game
         self.design_getter = GetPlayoffDesign(game)
+        self.logger = MigrationLogger.get_instance()
 
     def delete_single_team_design(self, team_id):
         """Delete chosen team_id from the game
@@ -220,6 +293,8 @@ class DeletePlayoffDesign(object):
         :raise ParameterException: if parameter is empty
         """
         Utility.raise_empty_parameter_exception([team_id])
+
+        self.logger.debug("deleting " + team_id + " design")
 
         self.game.delete(Constant.DESIGN_TEAMS + team_id, {})
 
@@ -231,6 +306,8 @@ class DeletePlayoffDesign(object):
         """
         Utility.raise_empty_parameter_exception([metric_id])
 
+        self.logger.debug("deleting " + metric_id + " design")
+
         self.game.delete(Constant.DESIGN_METRICS + metric_id, {})
 
     def delete_single_action_design(self, action_id):
@@ -240,6 +317,8 @@ class DeletePlayoffDesign(object):
         :raise ParameterException: if parameter is empty
         """
         Utility.raise_empty_parameter_exception([action_id])
+
+        self.logger.debug("deleting " + action_id + " design")
 
         self.game.delete(Constant.DESIGN_ACTIONS + action_id, {})
 
@@ -251,42 +330,89 @@ class DeletePlayoffDesign(object):
         """
         Utility.raise_empty_parameter_exception([leaderboard_id])
 
+        self.logger.debug("deleting " + leaderboard_id + " design")
+
         self.game.delete(Constant.DESIGN_LEADERBOARDS + leaderboard_id, {})
 
     def delete_teams_design(self):
         """Delete teams design"""
         teams_design = self.design_getter.get_teams_design()
+        teams_count = str(len(teams_design))
+
+        self.logger.info(teams_count + " teams design will be deleted")
+        index = 0
 
         for team in teams_design:
             self.delete_single_team_design(team['id'])
 
+            index += 1
+            self.logger.debug("team " + index + " of " + teams_count +
+                              " deleted")
+
+        self.logger.info("teams deleted")
+
     def delete_metrics_design(self):
         """Delete metrics design"""
         metrics_design = self.design_getter.get_metrics_design()
+        metrics_count = str(len(metrics_design))
+
+        self.logger.info(metrics_count + " metrics design will be deleted")
+        index = 0
 
         for metric in metrics_design:
             self.delete_single_metric_design(metric['id'])
 
+            index += 1
+            self.logger.debug("metric " + index + " of " + metrics_count +
+                              " deleted")
+
+        self.logger.info("metrics deleted")
+
     def delete_actions_design(self):
         """Delete actions design"""
         actions_design = self.design_getter.get_actions_design()
+        actions_count = str(len(actions_design))
+
+        self.logger.info(actions_count + " actions design will be deleted")
+        index = 0
 
         for action in actions_design:
             self.delete_single_action_design(action['id'])
 
+            index += 1
+            self.logger.debug("action " + index + " of " + actions_count +
+                              " deleted")
+
+        self.logger.info("actions deleted")
+
     def delete_leaderboards_design(self):
         """Delete leaderboards design"""
         leaderboards_design = self.design_getter.get_leaderboards_design()
+        leaderboards_count = str(len(leaderboards_design))
+
+        self.logger.info(leaderboards_count + " leaderboards design will be "
+                                              "deleted")
+        index = 0
 
         for leaderboard in leaderboards_design:
             self.delete_single_leaderboard_design(leaderboard['id'])
 
+            index += 1
+            self.logger.debug("leaderboard " + index + " of " +
+                              leaderboards_count + " deleted")
+
+        self.logger.info("leaderboards deleted")
+
     def delete_all_design(self):
         """Delete all design from the game"""
+        self.logger.info("deleting all design")
+
         self.delete_leaderboards_design()
         self.delete_actions_design()
         self.delete_metrics_design()
         self.delete_teams_design()
+
+        self.logger.info("all design deleted")
 
 
 # =======================
@@ -300,6 +426,7 @@ class GetPlayoffData(object):
 
     def __init__(self, game: Playoff):
         self.game = game
+        self.logger = MigrationLogger.get_instance()
 
     # ==============
     # COUNT METHODS
@@ -307,10 +434,14 @@ class GetPlayoffData(object):
 
     def get_team_count(self):
         """Return number of teams in the game"""
+        self.logger.debug("returning number of teams")
+
         return self.game.get(Constant.ADMIN_TEAMS, {})[Constant.TOTAL]
 
     def get_players_count(self):
         """Returns number of players in the game"""
+        self.logger.debug("returning number of players")
+
         return self.game.get(Constant.ADMIN_PLAYERS, {})[Constant.TOTAL]
 
     def get_players_count_in_team(self, team_id):
@@ -321,6 +452,8 @@ class GetPlayoffData(object):
         """
         Utility.raise_empty_parameter_exception([team_id])
 
+        self.logger.debug("returning number of players in team: " + team_id)
+
         return self.game.get(Constant.ADMIN_TEAMS + team_id +
                              '/members', {})[Constant.TOTAL]
 
@@ -330,6 +463,8 @@ class GetPlayoffData(object):
 
     def get_game_id(self):
         """ Returns game id of the chosen game """
+        self.logger.debug("returning game_id")
+
         return self.game.get(Constant.ADMIN_ROOT)["game"]["id"]
 
     def get_teams_by_id(self):
@@ -338,6 +473,8 @@ class GetPlayoffData(object):
         number_teams = self.get_team_count()
         number_pages = Utility.get_number_pages(number_teams)
 
+        self.logger.info("preparing list of teams id")
+
         for count in range(number_pages):
 
             teams = self.game.get(Constant.ADMIN_TEAMS,
@@ -345,6 +482,10 @@ class GetPlayoffData(object):
 
             for team in teams['data']:
                 teams_id.append(team['id'])
+
+                self.logger.debug(team['id'] + "added to list")
+
+        self.logger.info("returning list of teams id")
 
         return teams_id
 
@@ -356,6 +497,8 @@ class GetPlayoffData(object):
         """
         Utility.raise_empty_parameter_exception([team_id])
 
+        self.logger.debug("returning info of team: " + team_id)
+
         return self.game.get(Constant.ADMIN_TEAMS + team_id, {})
 
     def get_players_by_id(self):
@@ -364,12 +507,18 @@ class GetPlayoffData(object):
         number_players = self.get_players_count()
         number_pages = Utility.get_number_pages(number_players)
 
+        self.logger.info("preparing list of players id")
+
         for count in range(number_pages):
             players = self.game.get(Constant.ADMIN_PLAYERS,
                                     {"skip": str(count * 100), "limit": "100"})
 
             for player in players['data']:
                 players_id.append(player['id'])
+
+                self.logger.debug(player['id'] + "added to list")
+
+        self.logger.info("returning list of players id")
 
         return players_id
 
@@ -381,6 +530,8 @@ class GetPlayoffData(object):
         """
         Utility.raise_empty_parameter_exception([player_id])
 
+        self.logger.debug("returning info of player: " + player_id)
+
         return self.game.get(Constant.ADMIN_PLAYERS + player_id, {})
 
     def get_player_feed(self, player_id):
@@ -390,6 +541,8 @@ class GetPlayoffData(object):
         :raise ParameterException: if parameter is empty
         """
         Utility.raise_empty_parameter_exception([player_id])
+
+        self.logger.debug("returning feed of player: " + player_id)
 
         player_feed = self.game.get(Constant.ADMIN_PLAYERS + player_id +
                                     "/activity", {"start": "0"})
@@ -406,6 +559,8 @@ class GetPlayoffData(object):
         :raise: ParameterException: when parameter is empty
         """
         Utility.raise_empty_parameter_exception([leaderboard_id])
+
+        self.logger.debug("returning leaderboard: " + leaderboard_id)
 
         data = {
             "player_id": Constant.PLAYER_ID,
@@ -424,6 +579,7 @@ class PostPlayoffData(object):
 
     def __init__(self, game: Playoff):
         self.game = game
+        self.logger = MigrationLogger.get_instance()
 
     def create_team(self, team_data):
         """Create a team
@@ -433,7 +589,11 @@ class PostPlayoffData(object):
         """
         Utility.raise_empty_parameter_exception([team_data])
 
+        self.logger.debug("creating team " + team_data['id'])
+
         self.game.post(Constant.ADMIN_TEAMS, {}, team_data)
+
+        self.logger.debug("team created")
 
     def create_player(self, player_data):
         """Create a player
@@ -443,7 +603,11 @@ class PostPlayoffData(object):
         """
         Utility.raise_empty_parameter_exception([player_data])
 
+        self.logger.debug("creating player " + player_data['id'])
+
         self.game.post(Constant.ADMIN_PLAYERS, {}, player_data)
+
+        self.logger.debug("player created")
 
     def join_team(self, team_id, data):
         """Join a team
@@ -454,7 +618,11 @@ class PostPlayoffData(object):
         """
         Utility.raise_empty_parameter_exception([team_id, data])
 
+        self.logger.debug("join team " + team_id)
+
         self.game.post(Constant.ADMIN_TEAMS + team_id + "/join", {}, data)
+
+        self.logger.debug("team joined")
 
     def take_action(self, action_id, player_id, data):
         """Take an action
@@ -466,8 +634,12 @@ class PostPlayoffData(object):
         """
         Utility.raise_empty_parameter_exception([action_id, player_id, data])
 
+        self.logger.debug("taking action " + action_id + " by " + player_id)
+
         self.game.post(Constant.RUNTIME_ACTION + action_id + "/play",
                        player_id, data)
+
+        self.logger.debug("action taken")
 
 
 class DeletePlayoffData(object):
@@ -478,6 +650,7 @@ class DeletePlayoffData(object):
     def __init__(self, game: Playoff):
         self.game = game
         self.data_getter = GetPlayoffData(game)
+        self.logger = MigrationLogger.get_instance()
 
     def delete_single_team(self, team_id):
         """Delete chosen team
@@ -487,7 +660,11 @@ class DeletePlayoffData(object):
         """
         Utility.raise_empty_parameter_exception([team_id])
 
+        self.logger.debug("team " + team_id + " will be deleted")
+
         self.game.delete(Constant.ADMIN_TEAMS + team_id, {})
+
+        self.logger.debug("team deleted")
 
     def delete_single_player(self, player_id):
         """Delete chosen player
@@ -497,26 +674,54 @@ class DeletePlayoffData(object):
         """
         Utility.raise_empty_parameter_exception([player_id])
 
+        self.logger.debug("player " + player_id + " will be deleted")
+
         self.game.delete(Constant.ADMIN_PLAYERS + player_id, {})
+
+        self.logger.debug("player deleted")
 
     def delete_teams(self):
         """Delete all teams"""
         teams_by_id = self.data_getter.get_teams_by_id()
+        teams_count = str(len(teams_by_id))
+
+        self.logger.info(teams_count + " teams will be deleted")
+        index = 0
 
         for team in teams_by_id:
             self.delete_single_team(team)
 
+            index += 1
+            self.logger.debug("team " + index + " of " + teams_count +
+                              " deleted")
+
+        self.logger.info("teams deleted")
+
     def delete_players(self):
         """Delete all players"""
         players_by_id = self.data_getter.get_players_by_id()
+        players_count = str(len(players_by_id))
+
+        self.logger.info(players_count + " players will be deleted")
+        index = 0
 
         for player in players_by_id:
             self.delete_single_player(player)
 
+            index += 1
+            self.logger.debug("player " + index + " of " + players_count +
+                              " deleted")
+
+        self.logger.info("players deleted")
+
     def delete_all_data(self):
         """Delete all data from the game"""
+        self.logger.info("deleting data")
+
         self.delete_players()
         self.delete_teams()
+
+        self.logger.info("data deleted")
 
 
 # =======================
@@ -540,15 +745,19 @@ class PlayoffMigrationData(object):
         self.data_getter = GetPlayoffData(original)
         self.data_destroyer = DeletePlayoffData(to_clone)
         self.data_creator = PostPlayoffData(to_clone)
+        self.logger = MigrationLogger.get_instance()
 
     def migrate_teams(self):
         """Migrate teams"""
+        self.logger.info("migrating teams")
 
         self.data_destroyer.delete_teams()
 
         teams_by_id = self.data_getter.get_teams_by_id()
 
         for team in teams_by_id:
+            self.logger.debug("migrating team " + team)
+
             team_data = self.data_getter.get_team_info(team)
 
             creation_data = {
@@ -560,6 +769,8 @@ class PlayoffMigrationData(object):
 
             self.data_creator.create_team(creation_data)
 
+        self.logger.info("teams migration finished")
+
     def migrate_player_data(self, player_data):
         """Migrate players profile data
 
@@ -567,6 +778,8 @@ class PlayoffMigrationData(object):
         :raise ParameterException: if a parameter is empty
         """
         Utility.raise_empty_parameter_exception([player_data])
+
+        self.logger.debug("migrate player data")
 
         creation_data = {
             "id": player_data["id"],
@@ -582,6 +795,8 @@ class PlayoffMigrationData(object):
         :raise ParameterException: if a parameter is empty
         """
         Utility.raise_empty_parameter_exception([player_data])
+
+        self.logger.debug("migrate player in teams")
 
         for team in player_data["teams"]:
             data = {
@@ -603,6 +818,8 @@ class PlayoffMigrationData(object):
         """
         Utility.raise_empty_parameter_exception([player_id])
 
+        self.logger.debug("migrate feed of player " + player_id['player_id'])
+
         for feed in player_feed:
             if feed["event"] == "action":
                 action_id = feed['action']['id']
@@ -613,14 +830,19 @@ class PlayoffMigrationData(object):
 
                 self.data_creator.take_action(action_id, player_id, data)
 
+        self.logger.debug("feed migration finished")
+
     def migrate_players(self):
         """Migrate players"""
+        self.logger.info("migrating players")
 
         self.data_destroyer.delete_players()
 
         players_by_id = self.data_getter.get_players_by_id()
 
         for player in players_by_id:
+            self.logger.debug("migrating player " + player)
+
             player_data = self.data_getter.get_player_profile(player)
             player_feed = self.data_getter.get_player_feed(player)
             player_id = {"player_id": player}
@@ -629,10 +851,16 @@ class PlayoffMigrationData(object):
             self.migrate_player_in_teams(player_data)
             self.migrate_player_feed(player_id, player_feed)
 
+        self.logger.info("players migration finished")
+
     def migrate_all_data(self):
         """Migrate all data"""
+        self.logger.info("starting data migration")
+
         self.migrate_teams()
         self.migrate_players()
+
+        self.logger.info("data migration finished")
 
 
 class PlayoffMigrationDesign(object):
@@ -652,14 +880,19 @@ class PlayoffMigrationDesign(object):
         self.design_getter = GetPlayoffDesign(original)
         self.design_destroyer = DeletePlayoffDesign(to_clone)
         self.design_creator = PostPlayoffDesign(to_clone)
+        self.logger = MigrationLogger.get_instance()
 
     def migrate_teams_design(self):
         """Migrate teams design"""
+        self.logger.info("migrating teams design")
+
         teams_design = self.design_getter.get_teams_design()
 
         self.design_destroyer.delete_teams_design()
 
         for team in teams_design:
+            self.logger.debug("migrating team design " + team['id'])
+
             design_team = self.design_getter.get_single_team_design(team['id'])
 
             team_data = {
@@ -676,13 +909,19 @@ class PlayoffMigrationDesign(object):
 
             self.design_creator.create_team_design(team_data)
 
+        self.logger.info("teams design migration finished")
+
     def migrate_metrics_design(self):
         """Migrate metrics design"""
+        self.logger.info("migrating metrics design")
+
         metrics_design = self.design_getter.get_metrics_design()
 
         self.design_destroyer.delete_metrics_design()
 
         for metric in metrics_design:
+            self.logger.debug("migrating metric design " + metric['id'])
+
             design_metric = self.design_getter\
                 .get_single_metric_design(metric['id'])
 
@@ -699,13 +938,19 @@ class PlayoffMigrationDesign(object):
 
             self.design_creator.create_metric_design(metric_data)
 
+        self.logger.info("metrics design migration finished")
+
     def migrate_actions_design(self):
         """Migrate actions design"""
+        self.logger.info("migrating actions design")
+
         actions_design = self.design_getter.get_actions_design()
 
         self.design_destroyer.delete_actions_design()
 
         for action in actions_design:
+            self.logger.debug("migrating action design " + action['id'])
+
             design_action = self.design_getter\
                 .get_single_action_design(action['id'])
 
@@ -724,13 +969,20 @@ class PlayoffMigrationDesign(object):
 
             self.design_creator.create_action_design(action_data)
 
+        self.logger.info("actions design migration finished")
+
     def migrate_leaderboards_design(self):
         """Migrate leaderboards design"""
+        self.logger.info("migrating leaderboards design")
+
         leaderboards_design = self.design_getter.get_leaderboards_design()
 
         self.design_destroyer.delete_leaderboards_design()
 
         for leaderboard in leaderboards_design:
+            self.logger.debug("migrating leaderboard design " +
+                              leaderboard['id'])
+
             design_leaderboard = self.design_getter\
                 .get_single_leaderboard_design(leaderboard['id'])
 
@@ -749,9 +1001,15 @@ class PlayoffMigrationDesign(object):
 
             self.design_creator.create_leaderboard_design(leaderboard_data)
 
+        self.logger.info("leaderboards design migration finished")
+
     def migrate_all_design(self):
         """Migrate all design"""
+        self.logger.info("starting design migration")
+
         self.migrate_teams_design()
         self.migrate_metrics_design()
         self.migrate_actions_design()
         self.migrate_leaderboards_design()
+
+        self.logger.info("design migration finished")
