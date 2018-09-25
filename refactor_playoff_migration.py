@@ -59,7 +59,7 @@ class MigrationLogger:
         else:
             MigrationLogger.__instance = logging.getLogger("migration_logger")
             MigrationLogger.__instance.setLevel(logging.DEBUG)
-            ch = logging.FileHandler(filename="migration.logger", mode="w")
+            ch = logging.FileHandler(filename="migration.log", mode="w")
             ch.setLevel(logging.DEBUG)
             formatter = logging.Formatter(
                 "%(asctime)s - %(levelname)s - %(message)s",
@@ -95,11 +95,16 @@ class Utility(object):
 
     @staticmethod
     def raise_empty_parameter_exception(parameters):
+        """Raise an exception if one parameter is empty
+
+        :param list parameters: list of parameters to check
+        :raise ParameterException
+        """
         logger = MigrationLogger.get_instance()
 
         for par in parameters:
             if not par:
-                logger.warning("parameters: " + parameters)
+                logger.warning("parameters: " + str(parameters))
 
                 raise ParameterException("Parameter can't be empty")
 
@@ -346,7 +351,7 @@ class DeletePlayoffDesign(object):
             self.delete_single_team_design(team['id'])
 
             index += 1
-            self.logger.debug("team " + index + " of " + teams_count +
+            self.logger.debug("team " + str(index) + " of " + teams_count +
                               " deleted")
 
         self.logger.info("teams deleted")
@@ -363,7 +368,7 @@ class DeletePlayoffDesign(object):
             self.delete_single_metric_design(metric['id'])
 
             index += 1
-            self.logger.debug("metric " + index + " of " + metrics_count +
+            self.logger.debug("metric " + str(index) + " of " + metrics_count +
                               " deleted")
 
         self.logger.info("metrics deleted")
@@ -380,7 +385,7 @@ class DeletePlayoffDesign(object):
             self.delete_single_action_design(action['id'])
 
             index += 1
-            self.logger.debug("action " + index + " of " + actions_count +
+            self.logger.debug("action " + str(index) + " of " + actions_count +
                               " deleted")
 
         self.logger.info("actions deleted")
@@ -398,7 +403,7 @@ class DeletePlayoffDesign(object):
             self.delete_single_leaderboard_design(leaderboard['id'])
 
             index += 1
-            self.logger.debug("leaderboard " + index + " of " +
+            self.logger.debug("leaderboard " + str(index) + " of " +
                               leaderboards_count + " deleted")
 
         self.logger.info("leaderboards deleted")
@@ -634,7 +639,8 @@ class PostPlayoffData(object):
         """
         Utility.raise_empty_parameter_exception([action_id, player_id, data])
 
-        self.logger.debug("taking action " + action_id + " by " + player_id)
+        self.logger.debug("taking action " + action_id + " by " +
+                          player_id['player_id'])
 
         self.game.post(Constant.RUNTIME_ACTION + action_id + "/play",
                        player_id, data)
@@ -692,7 +698,7 @@ class DeletePlayoffData(object):
             self.delete_single_team(team)
 
             index += 1
-            self.logger.debug("team " + index + " of " + teams_count +
+            self.logger.debug("team " + str(index) + " of " + teams_count +
                               " deleted")
 
         self.logger.info("teams deleted")
@@ -709,7 +715,7 @@ class DeletePlayoffData(object):
             self.delete_single_player(player)
 
             index += 1
-            self.logger.debug("player " + index + " of " + players_count +
+            self.logger.debug("player " + str(index) + " of " + players_count +
                               " deleted")
 
         self.logger.info("players deleted")
@@ -836,7 +842,7 @@ class PlayoffMigrationData(object):
                 self.data_creator.take_action(action_id, player_id, data)
 
             index += 1
-            self.logger.debug("migrated " + index + " of " + feed_count +
+            self.logger.debug("migrated " + str(index) + " of " + feed_count +
                               " feed")
 
         self.logger.debug("feed migration finished")

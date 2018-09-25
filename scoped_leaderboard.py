@@ -184,7 +184,7 @@ class ScopedLeaderboard(PlayoffMigrationDesign, PlayoffMigrationData):
                 self.data_creator.take_action(action_id, player_id, data)
 
                 index += 1
-                self.logger.debug("migrated " + index + " of " + feed_count +
-                                  " scoped feed")
+                self.logger.debug("migrated " + str(index) + " of " +
+                                  feed_count + " scoped feed")
 
         self.logger.debug("scoped feed migration finished")

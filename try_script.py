@@ -21,6 +21,4 @@ playoff_client2 = Utility.get_playoff_client(
     "GAMELABCLONSCOPED2_CLIENT_SECRET"
 )
 
-migration = PlayoffMigrationData()
-
-migration.migrate_all_data()
+Utility.raise_empty_parameter_exception([""])

@@ -21,11 +21,11 @@ class UtilityTest(unittest.TestCase):
 
     def test_raise_exception(self):
         self.assertRaises(ParameterException,
-                          Utility.raise_empty_parameter_exception, "")
+                          Utility.raise_empty_parameter_exception, [""])
         self.assertRaises(ParameterException,
-                          Utility.raise_empty_parameter_exception, {})
+                          Utility.raise_empty_parameter_exception, [{}])
         self.assertRaises(ParameterException,
-                          Utility.raise_empty_parameter_exception, [])
+                          Utility.raise_empty_parameter_exception, [[]])
 
     def test_playoff_client_factory(self):
         client_id = "GAMELABNOTARGETV01_CLIENT_ID"
