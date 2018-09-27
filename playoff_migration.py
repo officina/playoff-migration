@@ -108,11 +108,12 @@ class Utility(object):
                 raise ParameterException("Parameter can't be empty")
 
     @staticmethod
-    def get_playoff_client(client_id, client_secret):
+    def get_playoff_client(client_id, client_secret, hostname):
         """Return Playoff game instance given his client id and client secret
 
         :param client_id: Playoff game client id
         :param client_secret: Playoff game client secret
+        :param hostname: hostname
         :return: Playoff game instance
         """
         Utility.raise_empty_parameter_exception([client_id, client_secret])
@@ -128,7 +129,8 @@ class Utility(object):
             client_id=os.environ[client_id],
             client_secret=os.environ[client_secret],
             type='client',
-            allow_unsecure=True
+            allow_unsecure=True,
+            hostname=os.environ[hostname]
         )
 
 

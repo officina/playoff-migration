@@ -28,8 +28,9 @@ class UtilityTest(unittest.TestCase):
     def test_playoff_client_factory(self):
         client_id = "ORIGINAL_CLIENT_ID"
         client_secret = "ORIGINAL_CLIENT_SECRET"
+        orginal_hostname = "ORIGINAL_HOSTNAME"
 
-        client = Utility.get_playoff_client(client_id, client_secret)
+        client = Utility.get_playoff_client(client_id, client_secret, orginal_hostname)
 
         self.assertTrue(isinstance(client, Playoff))
 
