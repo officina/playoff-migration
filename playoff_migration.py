@@ -37,6 +37,7 @@ class Constant(object):
     DESIGN_ACTIONS = "/design/versions/" + VERSION + "/actions/"
     DESIGN_METRICS = "/design/versions/" + VERSION + "/metrics/"
     DESIGN_LEADERBOARDS = "/design/versions/" + VERSION + "/leaderboards/"
+    DESIGN_DEPLOY = "/design/versions/" + VERSION + "/deploy/"
 
     RUNTIME_ACTION = "/runtime/actions/"
     RUNTIME_LEADERBOARDS = "/runtime/leaderboards/"
@@ -741,13 +742,12 @@ class PlayoffMigrationData(object):
     """Class that make a migration of data from a Playoff game to an other"""
 
     def __init__(self, original_client, cloned_client):
-        original = original_client
+        self.original = original_client
+        self.to_clone = cloned_client
 
-        to_clone = cloned_client
-
-        self.data_getter = GetPlayoffData(original)
-        self.data_destroyer = DeletePlayoffData(to_clone)
-        self.data_creator = PostPlayoffData(to_clone)
+        self.data_getter = GetPlayoffData(self.original)
+        self.data_destroyer = DeletePlayoffData(self.to_clone)
+        self.data_creator = PostPlayoffData(self.to_clone)
         self.logger = MigrationLogger.get_instance()
 
     def migrate_teams(self):
@@ -879,13 +879,12 @@ class PlayoffMigrationDesign(object):
     """Class that make a migration of design from a Playoff game to an other"""
 
     def __init__(self, original_client, cloned_client):
-        original = original_client
+        self.original = original_client
+        self.to_clone = cloned_client
 
-        to_clone = cloned_client
-
-        self.design_getter = GetPlayoffDesign(original)
-        self.design_destroyer = DeletePlayoffDesign(to_clone)
-        self.design_creator = PostPlayoffDesign(to_clone)
+        self.design_getter = GetPlayoffDesign(self.original)
+        self.design_destroyer = DeletePlayoffDesign(self.to_clone)
+        self.design_creator = PostPlayoffDesign(self.to_clone)
         self.logger = MigrationLogger.get_instance()
 
     def migrate_teams_design(self):
@@ -1036,6 +1035,16 @@ class PlayoffMigrationDesign(object):
 
         self.logger.info("leaderboards design migration finished")
 
+    """
+    def deploy_game_design(self):
+        # Deploy game design to reflect changes 
+        deploy_response = self.to_clone.post(Constant.DESIGN_DEPLOY, 
+                                             {"player_id": Constant.PLAYER_ID}, 
+                                             {})
+        
+        self.logger.info(deploy_response)
+    """
+
     def migrate_all_design(self):
         """Migrate all design"""
         self.logger.info("starting design migration")
@@ -1044,5 +1053,7 @@ class PlayoffMigrationDesign(object):
         self.migrate_metrics_design()
         self.migrate_actions_design()
         self.migrate_leaderboards_design()
+
+        # self.deploy_game_design()
 
         self.logger.info("design migration finished")
