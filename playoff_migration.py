@@ -954,7 +954,7 @@ class PlayoffMigrationDesign(object):
             design_metric = self.design_getter \
                 .get_single_metric_design(metric['id'])
 
-            if design_metric['type'] is "compound":
+            if design_metric['type'] == "compound":
                 coumpound_metrics.append(design_metric)
             else:
                 non_coumpound_metrics.append(design_metric)
