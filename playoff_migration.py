@@ -917,19 +917,13 @@ class PlayoffMigrationDesign(object):
 
         self.logger.info("teams design migration finished")
 
-    def migrate_metrics_design(self):
-        """Migrate metrics design"""
-        self.logger.info("migrating metrics design")
+    def migrate_list_of_metrics(self, metrics_list):
+        """Migrate a list of metrics, list can be empty
 
-        metrics_design = self.design_getter.get_metrics_design()
-
-        self.design_destroyer.delete_metrics_design()
-
-        for metric in metrics_design:
-            self.logger.debug("migrating metric design " + metric['id'])
-
-            design_metric = self.design_getter\
-                .get_single_metric_design(metric['id'])
+        :param list metrics_list: list of metrics design
+        """
+        for design_metric in metrics_list:
+            self.logger.debug("migrating " + design_metric['id'] + " design")
 
             metric_data = {
                 "id": design_metric['id'],
@@ -943,6 +937,39 @@ class PlayoffMigrationDesign(object):
                                     design_metric["description"]})
 
             self.design_creator.create_metric_design(metric_data)
+
+    def migrate_metrics_design(self):
+        """Migrate metrics design"""
+        self.logger.info("migrating metrics design")
+
+        metrics_design = self.design_getter.get_metrics_design()
+
+        self.design_destroyer.delete_metrics_design()
+
+        # lists to save coumpound and non-coumpound metrics
+        non_coumpound_metrics = []
+        coumpound_metrics = []
+
+        for metric in metrics_design:
+            design_metric = self.design_getter \
+                .get_single_metric_design(metric['id'])
+
+            if design_metric['type'] is "compound":
+                coumpound_metrics.append(design_metric)
+            else:
+                non_coumpound_metrics.append(design_metric)
+
+        self.logger.info("migrating not coumpound metrics design")
+
+        self.migrate_list_of_metrics(non_coumpound_metrics)
+
+        self.logger.info("migrating not coumpound metrics design finished")
+
+        self.logger.info("migrating coumpound metrics design")
+
+        self.migrate_list_of_metrics(coumpound_metrics)
+
+        self.logger.info("migrating coumpound metrics design finished")
 
         self.logger.info("metrics design migration finished")
 
