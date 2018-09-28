@@ -40,7 +40,8 @@ class GetPlayoffDesignTest(unittest.TestCase):
     def setUp(self):
         playoff_client = Utility.get_playoff_client(
             "ORIGINAL_CLIENT_ID",
-            "ORIGINAL_CLIENT_SECRET"
+            "ORIGINAL_CLIENT_SECRET",
+            "ORIGINAL_HOSTNAME"
         )
 
         self.design_getter = GetPlayoffDesign(playoff_client)
@@ -84,7 +85,8 @@ class PostDeletePlayoffDesignTest(unittest.TestCase):
     def setUp(self):
         playoff_client = Utility.get_playoff_client(
             "CLONED_CLIENT_ID",
-            "CLONED_CLIENT_SECRET"
+            "CLONED_CLIENT_SECRET",
+            "ORIGINAL_HOSTNAME"
         )
 
         self.design_poster = PostPlayoffDesign(playoff_client)
@@ -306,7 +308,8 @@ class GetPlayoffDataTest(unittest.TestCase):
     def setUp(self):
         playoff_client = Utility.get_playoff_client(
             "ORIGINAL_CLIENT_ID",
-            "ORIGINAL_CLIENT_SECRET"
+            "ORIGINAL_CLIENT_SECRET",
+            "ORIGINAL_HOSTNAME"
         )
 
         self.data_getter = GetPlayoffData(playoff_client)
@@ -316,7 +319,8 @@ class GetPlayoffDataTest(unittest.TestCase):
 
         team_instances_count = self.data_getter.get_team_count()
         players_count = self.data_getter.get_players_count()
-        players_count_team = self.data_getter.get_players_count_in_team(team_id)
+        players_count_team = self.data_getter.get_players_count_in_team(
+            team_id)
 
         self.assertTrue(isinstance(team_instances_count, int))
         self.assertTrue(isinstance(players_count, int))
@@ -388,7 +392,8 @@ class PostDeletePlayoffDataTest(unittest.TestCase):
     def setUp(self):
         playoff_client = Utility.get_playoff_client(
             "CLONED_CLIENT_ID",
-            "CLONED_CLIENT_SECRET"
+            "CLONED_CLIENT_SECRET",
+            "CLONED_HOSTNAME"
         )
 
         self.data_deleter = DeletePlayoffData(playoff_client)
@@ -539,12 +544,14 @@ class MigrationDataTest(unittest.TestCase):
     def setUp(self):
         original = Utility.get_playoff_client(
             "ORIGINAL_CLIENT_ID",
-            "ORIGINAL_CLIENT_SECRET"
+            "ORIGINAL_CLIENT_SECRET",
+            "ORIGINAL_HOSTNAME"
         )
 
         to_clone = Utility.get_playoff_client(
             "CLONED_CLIENT_ID",
-            "CLONED_CLIENT_SECRET"
+            "CLONED_CLIENT_SECRET",
+            "CLONED_HOSTNAME"
         )
 
         self.migrate_data = PlayoffMigrationData(original, to_clone)
@@ -600,12 +607,14 @@ class MigrationDesignTest(unittest.TestCase):
     def setUp(self):
         original = Utility.get_playoff_client(
             "ORIGINAL_CLIENT_ID",
-            "ORIGINAL_CLIENT_SECRET"
+            "ORIGINAL_CLIENT_SECRET",
+            "ORIGINAL_HOSTNAME"
         )
 
         to_clone = Utility.get_playoff_client(
             "CLONED_CLIENT_ID",
-            "CLONED_CLIENT_SECRET"
+            "CLONED_CLIENT_SECRET",
+            "CLONED_HOSTNAME"
         )
 
         self.migrate_design = PlayoffMigrationDesign(original, to_clone)

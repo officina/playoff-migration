@@ -9,15 +9,17 @@ class ScopedLeaderboardTest(unittest.TestCase):
     def setUp(self):
         original = Utility.get_playoff_client(
             "ORIGINAL_CLIENT_ID",
-            "ORIGINAL_CLIENT_SECRET"
+            "ORIGINAL_CLIENT_SECRET",
+            "ORIGINAL_HOSTNAME"
         )
 
         to_clone = Utility.get_playoff_client(
             "CLONED_CLIENT_ID",
-            "CLONED_CLIENT_SECRET"
+            "CLONED_CLIENT_SECRET",
+            "CLONED_HOSTNAME"
         )
 
-        self.scoped_client = ScopedLeaderboard()
+        self.scoped_client = ScopedLeaderboard(original, to_clone)
 
         self.design_getter = GetPlayoffDesign(original)
         self.design_getter_cloned = GetPlayoffDesign(to_clone)
@@ -32,7 +34,8 @@ class ScopedLeaderboardTest(unittest.TestCase):
 
         self.scoped_client.migrate_leaderboards_design()
 
-        leaderboards_cloned = self.design_getter_cloned.get_leaderboards_design()
+        leaderboards_cloned = self.design_getter_cloned\
+            .get_leaderboards_design()
         leaderboards_count_cloned = len(leaderboards_cloned)
 
         self.assertEqual(leaderboards_count, leaderboards_count_cloned)

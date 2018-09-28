@@ -109,14 +109,16 @@ class Utility(object):
 
     @staticmethod
     def get_playoff_client(client_id, client_secret, hostname):
-        """Return Playoff game instance given his client id and client secret
+        """Return Playoff game instance given his client id , client secret and
+        hostname
 
         :param client_id: Playoff game client id
         :param client_secret: Playoff game client secret
         :param hostname: hostname
         :return: Playoff game instance
         """
-        Utility.raise_empty_parameter_exception([client_id, client_secret])
+        Utility.raise_empty_parameter_exception([client_id, client_secret,
+                                                 hostname])
 
         logger = MigrationLogger.get_instance()
         logger.info("A new playoff client will be created...")

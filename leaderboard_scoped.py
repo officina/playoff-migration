@@ -103,19 +103,7 @@ class ScopedLeaderboard(PlayoffMigrationDesign, PlayoffMigrationData):
     migrating it in another game
     """
 
-    def __init__(self):
-        original = Utility.get_playoff_client(
-            "ORIGINAL_CLIENT_ID",
-            "ORIGINAL_CLIENT_SECRET",
-            "ORIGINAL_HOSTNAME"
-        )
-
-        to_clone = Utility.get_playoff_client(
-            "CLONED_CLIENT_ID",
-            "CLONED_CLIENT_SECRET",
-            "CLONED_HOSTNAME"
-        )
-
+    def __init__(self, original, to_clone):
         PlayoffMigrationDesign.__init__(self, original, to_clone)
         PlayoffMigrationData.__init__(self, original, to_clone)
 
