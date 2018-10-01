@@ -37,7 +37,9 @@ class Constant(object):
     DESIGN_ACTIONS = "/design/versions/" + VERSION + "/actions/"
     DESIGN_METRICS = "/design/versions/" + VERSION + "/metrics/"
     DESIGN_LEADERBOARDS = "/design/versions/" + VERSION + "/leaderboards/"
+    DESIGN_RULES = "/design/versions/" + VERSION + "/rules"
     DESIGN_DEPLOY = "/design/versions/" + VERSION + "/deploy/"
+
 
     RUNTIME_ACTION = "/runtime/actions/"
     RUNTIME_LEADERBOARDS = "/runtime/leaderboards/"
@@ -219,6 +221,17 @@ class GetPlayoffDesign(object):
 
         return self.game.get(Constant.DESIGN_LEADERBOARDS + leaderboard_id, {})
 
+    def get_rules_design(self):
+        """ Return a list containing all rules design """
+        return self.game.get(Constant.DESIGN_RULES, {})
+
+    def get_single_rule_design(self, rule_id):
+        """Return design of the chosen rule
+
+        :param str rule_id: id of rule
+        """
+        return self.game.get(Constant.DESIGN_RULES + rule_id, {})
+
 
 class PostPlayoffDesign(object):
     """Class that make POST call via Playoff client to create design
@@ -281,6 +294,20 @@ class PostPlayoffDesign(object):
         self.logger.debug("creating leaderboard design")
 
         self.game.post(Constant.DESIGN_LEADERBOARDS, {}, design_data)
+
+        self.logger.debug("leaderboard design created")
+
+    def create_rule_design(self, design_data):
+        """Create a rule design
+
+                :param dict design_data: info necessary to create an rule design
+                :raise ParameterException: if parameter is empty
+                """
+        Utility.raise_empty_parameter_exception([design_data])
+
+        self.logger.debug("creating rule design")
+
+        self.game.post(Constant.DESIGN_RULES, {}, design_data)
 
         self.logger.debug("leaderboard design created")
 
@@ -1035,6 +1062,16 @@ class PlayoffMigrationDesign(object):
 
         self.logger.info("leaderboards design migration finished")
 
+    def migrate_rules_design(self):
+        """Migrate rules design"""
+        self.logger.info("migrating rules design")
+
+        rules_design = self.design_getter.get_rules_design()
+
+        for rule in rules_design:
+            single_rule_design = self.design_getter.get_single_rule_design(rule_id=rule["id"])
+
+            self.design_creator.create_rule_design(single_rule_design)
     """
     def deploy_game_design(self):
         # Deploy game design to reflect changes 
@@ -1051,6 +1088,7 @@ class PlayoffMigrationDesign(object):
 
         self.migrate_teams_design()
         self.migrate_metrics_design()
+        self.migrate_rules_design()
         self.migrate_actions_design()
         self.migrate_leaderboards_design()
 
