@@ -1035,15 +1035,13 @@ class PlayoffMigrationDesign(object):
 
         self.logger.info("leaderboards design migration finished")
 
-    """
     def deploy_game_design(self):
-        # Deploy game design to reflect changes 
+        """Deploy game design to reflect design changes"""
         deploy_response = self.to_clone.post(Constant.DESIGN_DEPLOY, 
                                              {"player_id": Constant.PLAYER_ID}, 
                                              {})
         
-        self.logger.info(deploy_response)
-    """
+        self.logger.info("Desploy response: " + deploy_response)
 
     def migrate_all_design(self):
         """Migrate all design"""
@@ -1054,6 +1052,6 @@ class PlayoffMigrationDesign(object):
         self.migrate_actions_design()
         self.migrate_leaderboards_design()
 
-        # self.deploy_game_design()
+        self.deploy_game_design()
 
         self.logger.info("design migration finished")
