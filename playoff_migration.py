@@ -1,6 +1,7 @@
 import os
 from logging import Logger
 import logging
+import configparser
 
 from playoff import Playoff
 from dotenv import load_dotenv
@@ -28,6 +29,8 @@ class Constant(object):
     PLAYER_ID = "atomasse"
     BIG_NUMBER = 10 ** 10
     CYCLE = "alltime"
+
+    SCORES = "/scores/"
 
     ADMIN_ROOT = "/admin/"
     ADMIN_PLAYERS = "/admin/players/"
@@ -643,6 +646,42 @@ class GetPlayoffData(object):
         return self.game.get(Constant.RUNTIME_LEADERBOARDS + leaderboard_id,
                              data)
 
+    def get_metric_scores(self, player_id):
+        """
+        Return a list of all scores of the chosen player
+
+        :param player_id: player id
+        :return: list containing player's scores
+        """
+        Utility.raise_empty_parameter_exception([player_id])
+
+        player_profile = self.get_player_profile(player_id)
+
+        self.logger.info("returning player " + player_id + " scores")
+
+        return player_profile['scores']
+
+    def get_single_metric_score(self, player_id, metric_id):
+        """
+        Return score of the chosen player in the chosen metric
+        :param player_id: player id
+        :param metric_id: metric to get score
+        :raise exception: if metric_id doesn't exists in the game
+        :return: score of the player in the given metric
+        """
+        Utility.raise_empty_parameter_exception([player_id, metric_id])
+
+        player_scores = self.get_metric_scores(player_id)
+
+        self.logger.info("returning metric " + metric_id)
+
+        for score in player_scores:
+            if score['metric']['id'] == metric_id:
+                return score
+
+        self.logger.warning("metric " + metric_id + " wasn't found")
+        raise Exception("no metric with given name was found")
+
 
 class PostPlayoffData(object):
     """Class that make POST call via Playoff client to create instances
@@ -713,6 +752,80 @@ class PostPlayoffData(object):
                        player_id, data)
 
         self.logger.debug("action taken")
+
+
+class PatchPlayoffData(object):
+    """
+    Class that make PATCH call via Playoff client to modify data in the
+    Playoff game
+    """
+    def __init__(self, game: Playoff):
+        self.game = game
+        self.design_getter = GetPlayoffDesign(game)
+        self.logger = MigrationLogger.get_instance()
+
+    def json_score(self, metric_id, score):
+        """
+        Return json data accepted to json schema for call patch method
+
+        :param metric_id: metric_id to update
+        :param score: value to set the metric
+        :return: dict to use in patch_player_score
+        """
+        Utility.raise_empty_parameter_exception([metric_id, score])
+
+        metric_design = self.design_getter.get_single_metric_design(metric_id)
+        metric_type = metric_design['type']
+
+        data = {
+            "rewards": [{
+                "metric": {
+                    "id": metric_id,
+                    "type": metric_type
+                },
+                "verb": "set",
+                "value": str(score)
+            }]
+        }
+
+        self.logger.debug("returning json score")
+        self.logger.debug(data)
+
+        return data
+
+    def patch_player_score(self, player_id, data):
+        """
+        Update a player score
+
+        :param player_id: player id to update score
+        :param data: data necessary to update a score
+        """
+        Utility.raise_empty_parameter_exception([player_id, data])
+
+        self.logger.debug("updating score of player " + player_id)
+        self.logger.debug("data given")
+        self.logger.debug(data)
+
+        self.game.patch(Constant.ADMIN_PLAYERS + player_id + Constant.SCORES,
+                        {"player_id": player_id}, data)
+
+        self.logger.debug("scores updated")
+
+    def update_metric(self, player_id, metric_id, value):
+        """
+        Update a score of the given player in the given metric
+
+        :param player_id: player id
+        :param metric_id: metric id to update
+        :param value: new value of metric
+        """
+        Utility.raise_empty_parameter_exception([player_id, metric_id, value])
+
+        self.logger.info("updating metric " + metric_id + " of player " +
+                         player_id)
+
+        data = self.json_score(metric_id, value)
+        self.patch_player_score(player_id, data)
 
 
 class DeletePlayoffData(object):
@@ -809,8 +922,13 @@ class PlayoffMigrationData(object):
         self.to_clone = cloned_client
 
         self.data_getter = GetPlayoffData(self.original)
+
         self.data_destroyer = DeletePlayoffData(self.to_clone)
         self.data_creator = PostPlayoffData(self.to_clone)
+        self.data_patcher = PatchPlayoffData(self.to_clone)
+
+        self.config = configparser.ConfigParser()
+        self.config.read("settings.ini")
         self.logger = MigrationLogger.get_instance()
 
     def migrate_teams(self):
@@ -907,6 +1025,37 @@ class PlayoffMigrationData(object):
 
         self.logger.debug("feed migration finished")
 
+    def migrate_player_scores(self, player_id, player_scores):
+        """
+        Migrate player scores, manually chainging metric value
+
+        :param player_id: player id to update metrics
+        :param player_scores: player scores
+        """
+        Utility.raise_empty_parameter_exception([player_id, player_scores])
+
+        # remove compound metrics
+        filtered_scores = [score for score in player_scores
+                           if score['metric']['type'] != 'compound']
+
+        scores_count = str(len(filtered_scores))
+
+        self.logger.info("update metrics of player " + player_id)
+        self.logger.debug("updating " + scores_count + " metrics")
+        index = 0
+
+        for score in filtered_scores:
+            metric = score['metric']['id']
+            value = int(score['value'])
+
+            index += 1
+            self.logger.debug("updating metric " + str(index) + " of " +
+                              scores_count)
+
+            self.data_patcher.update_metric(player_id, metric, value)
+
+        self.logger.info("updating metrics of " + player_id + "finished")
+
     def migrate_players(self):
         """Migrate players"""
         self.logger.info("migrating players")
@@ -919,12 +1068,18 @@ class PlayoffMigrationData(object):
             self.logger.debug("migrating player " + player)
 
             player_data = self.data_getter.get_player_profile(player)
-            player_feed = self.data_getter.get_player_feed(player)
+
             player_id = {"player_id": player}
 
             self.migrate_player_data(player_data)
             self.migrate_player_in_teams(player_data)
-            self.migrate_player_feed(player_id, player_feed)
+
+            if self.config.getboolean('player_feed', 'Feed'):
+                player_feed = self.data_getter.get_player_feed(player)
+                self.migrate_player_feed(player_id, player_feed)
+            else:
+                player_scores = self.data_getter.get_metric_scores(player)
+                self.migrate_player_scores(player, player_scores)
 
         self.logger.info("players migration finished")
 
@@ -1109,8 +1264,8 @@ class PlayoffMigrationDesign(object):
         for rule in rules_design:
             self.logger.debug("migrating rule design " + rule['id'])
 
-            design_rule = self.design_getter.get_single_rule_design\
-                (rule_id=rule['id'])
+            design_rule = self.design_getter.get_single_rule_design(
+                rule_id=rule['id'])
 
             rule_data = {
                 "id": design_rule['id'],
@@ -1137,14 +1292,14 @@ class PlayoffMigrationDesign(object):
 
         self.logger.info("rules design migration finished")
 
-
     def deploy_game_design(self):
         """Deploy game design to reflect design changes"""
         deploy_response = self.to_clone.post(Constant.DESIGN_DEPLOY, 
                                              {"player_id": Constant.PLAYER_ID}, 
                                              {})
         
-        self.logger.info("Desploy response: " + deploy_response)
+        self.logger.info("Desploy response: ")
+        self.logger.info(deploy_response)
 
     def migrate_all_design(self):
         """Migrate all design"""
