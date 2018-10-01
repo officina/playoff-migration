@@ -37,7 +37,7 @@ class Constant(object):
     DESIGN_ACTIONS = "/design/versions/" + VERSION + "/actions/"
     DESIGN_METRICS = "/design/versions/" + VERSION + "/metrics/"
     DESIGN_LEADERBOARDS = "/design/versions/" + VERSION + "/leaderboards/"
-    DESIGN_RULES = "/design/versions/" + VERSION + "/rules"
+    DESIGN_RULES = "/design/versions/" + VERSION + "/rules/"
     DESIGN_DEPLOY = "/design/versions/" + VERSION + "/deploy/"
 
 
@@ -370,6 +370,18 @@ class DeletePlayoffDesign(object):
 
         self.game.delete(Constant.DESIGN_LEADERBOARDS + leaderboard_id, {})
 
+    def delete_single_rule_design(self, rule_id):
+        """Delete chosen rule_id from the game
+
+        :param str rule_id: rule id to delete
+        :raise ParameterException: if parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([rule_id])
+
+        self.logger.debug("deleting " + rule_id + " design")
+
+        self.game.delete(Constant.DESIGN_RULES + rule_id, {})
+
     def delete_teams_design(self):
         """Delete teams design"""
         teams_design = self.design_getter.get_teams_design()
@@ -438,6 +450,24 @@ class DeletePlayoffDesign(object):
                               leaderboards_count + " deleted")
 
         self.logger.info("leaderboards deleted")
+
+    def delete_rules_design(self):
+        """Delete rules design"""
+        rules_design = self.design_getter.get_rules_design()
+        rules_count = str(len(rules_design))
+
+        self.logger.info(rules_count + " rules design will be "
+                                              "deleted")
+        index = 0
+
+        for rule in rules_design:
+            self.delete_single_rule_design(rule['id'])
+
+            index += 1
+            self.logger.debug("rule " + str(index) + " of " +
+                              rules_count + " deleted")
+
+        self.logger.info("rule deleted")
 
     def delete_all_design(self):
         """Delete all design from the game"""
@@ -1068,10 +1098,37 @@ class PlayoffMigrationDesign(object):
 
         rules_design = self.design_getter.get_rules_design()
 
-        for rule in rules_design:
-            single_rule_design = self.design_getter.get_single_rule_design(rule_id=rule["id"])
+        self.design_destroyer.delete_rules_design()
 
-            self.design_creator.create_rule_design(single_rule_design)
+        for rule in rules_design:
+            self.logger.debug("migrating rule design " +
+                              rule['id'])
+
+            design_rule = self.design_getter.get_single_rule_design(rule_id=rule['id'])
+
+            rule_data = {
+                "id": design_rule['id'],
+                "name": design_rule['name'],
+                "type": design_rule['type'],
+            }
+            if design_rule['type'] == 'achievement':
+                rule_data['achievement'] = design_rule['achievement']
+                rule_data['requires'] = design_rule['requires']
+            elif design_rule['type'] == "level":
+                rule_data['base_metric'] = design_rule['base_metric']
+                rule_data['level_metric'] = design_rule['level_metric']
+                rule_data['levels'] = design_rule['levels']
+                if "tags" in design_rule.keys():
+                    rule_data['tags'] = design_rule['tags']
+            elif design_rule['type'] == "custom":
+                rule_data['rules'] = design_rule['rules']
+                rule_data['variables'] = design_rule['variables']
+                if "tags" in design_rule.keys():
+                    rule_data['tags'] = design_rule['tags']
+
+            self.design_creator.create_rule_design(rule_data)
+        self.logger.info("rules design migration finished")
+
     """
     def deploy_game_design(self):
         # Deploy game design to reflect changes 
