@@ -107,10 +107,11 @@ class Utility(object):
         logger = MigrationLogger.get_instance()
 
         for par in parameters:
-            if not par:
-                logger.warning("parameters: " + str(parameters))
+            if not isinstance(par, int):
+                if not par:
+                    logger.warning("parameters: " + str(parameters))
 
-                raise ParameterException("Parameter can't be empty")
+                    raise ParameterException("Parameter can't be empty")
 
     @staticmethod
     def get_playoff_client(client_id, client_secret, hostname):
