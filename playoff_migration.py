@@ -37,6 +37,7 @@ class Constant(object):
     DESIGN_ACTIONS = "/design/versions/" + VERSION + "/actions/"
     DESIGN_METRICS = "/design/versions/" + VERSION + "/metrics/"
     DESIGN_LEADERBOARDS = "/design/versions/" + VERSION + "/leaderboards/"
+    DESIGN_RULES = "/design/versions/" + VERSION + "/rules/"
     DESIGN_DEPLOY = "/design/versions/" + VERSION + "/deploy/"
 
     RUNTIME_ACTION = "/runtime/actions/"
@@ -219,6 +220,23 @@ class GetPlayoffDesign(object):
 
         return self.game.get(Constant.DESIGN_LEADERBOARDS + leaderboard_id, {})
 
+    def get_rules_design(self):
+        """Return a list of dict containing rules design id and name"""
+        self.logger.debug("calling playoff for rules design")
+
+        return self.game.get(Constant.DESIGN_RULES, {})
+
+    def get_single_rule_design(self, rule_id):
+        """Return design of the chosen rule
+
+        :param str rule_id: id of rule
+        """
+        Utility.raise_empty_parameter_exception([rule_id])
+
+        self.logger.debug("returning " + rule_id + " design")
+
+        return self.game.get(Constant.DESIGN_RULES + rule_id, {})
+
 
 class PostPlayoffDesign(object):
     """Class that make POST call via Playoff client to create design
@@ -284,6 +302,20 @@ class PostPlayoffDesign(object):
 
         self.logger.debug("leaderboard design created")
 
+    def create_rule_design(self, design_data):
+        """Create a rule design
+
+        :param dict design_data: info necessary to create an rule design
+        :raise ParameterException: if parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([design_data])
+
+        self.logger.debug("creating rule design")
+
+        self.game.post(Constant.DESIGN_RULES, {}, design_data)
+
+        self.logger.debug("rule design created")
+
 
 class DeletePlayoffDesign(object):
     """Class that make DELETE call via Playoff client to erase design
@@ -342,6 +374,18 @@ class DeletePlayoffDesign(object):
         self.logger.debug("deleting " + leaderboard_id + " design")
 
         self.game.delete(Constant.DESIGN_LEADERBOARDS + leaderboard_id, {})
+
+    def delete_single_rule_design(self, rule_id):
+        """Delete chosen rule_id from the game
+
+        :param str rule_id: rule id to delete
+        :raise ParameterException: if parameter is empty
+        """
+        Utility.raise_empty_parameter_exception([rule_id])
+
+        self.logger.debug("deleting " + rule_id + " design")
+
+        self.game.delete(Constant.DESIGN_RULES + rule_id, {})
 
     def delete_teams_design(self):
         """Delete teams design"""
@@ -412,6 +456,24 @@ class DeletePlayoffDesign(object):
 
         self.logger.info("leaderboards deleted")
 
+    def delete_rules_design(self):
+        """Delete rules design"""
+        rules_design = self.design_getter.get_rules_design()
+        rules_count = str(len(rules_design))
+
+        self.logger.info(rules_count + " rules design will be "
+                                       "deleted")
+        index = 0
+
+        for rule in rules_design:
+            self.delete_single_rule_design(rule['id'])
+
+            index += 1
+            self.logger.debug("rule " + str(index) + " of " +
+                              rules_count + " deleted")
+
+        self.logger.info("rules deleted")
+
     def delete_all_design(self):
         """Delete all design from the game"""
         self.logger.info("deleting all design")
@@ -420,6 +482,7 @@ class DeletePlayoffDesign(object):
         self.delete_actions_design()
         self.delete_metrics_design()
         self.delete_teams_design()
+        self.delete_rules_design()
 
         self.logger.info("all design deleted")
 
@@ -1035,6 +1098,46 @@ class PlayoffMigrationDesign(object):
 
         self.logger.info("leaderboards design migration finished")
 
+    def migrate_rules_design(self):
+        """Migrate rules design"""
+        self.logger.info("migrating rules design")
+
+        rules_design = self.design_getter.get_rules_design()
+
+        self.design_destroyer.delete_rules_design()
+
+        for rule in rules_design:
+            self.logger.debug("migrating rule design " + rule['id'])
+
+            design_rule = self.design_getter.get_single_rule_design\
+                (rule_id=rule['id'])
+
+            rule_data = {
+                "id": design_rule['id'],
+                "name": design_rule['name'],
+                "type": design_rule['type'],
+            }
+
+            if design_rule['type'] == 'achievement':
+                rule_data['achievement'] = design_rule['achievement']
+                rule_data['requires'] = design_rule['requires']
+            elif design_rule['type'] == "level":
+                rule_data['base_metric'] = design_rule['base_metric']
+                rule_data['level_metric'] = design_rule['level_metric']
+                rule_data['levels'] = design_rule['levels']
+                if "tags" in design_rule.keys():
+                    rule_data['tags'] = design_rule['tags']
+            elif design_rule['type'] == "custom":
+                rule_data['rules'] = design_rule['rules']
+                rule_data['variables'] = design_rule['variables']
+                if "tags" in design_rule.keys():
+                    rule_data['tags'] = design_rule['tags']
+
+            self.design_creator.create_rule_design(rule_data)
+
+        self.logger.info("rules design migration finished")
+
+
     def deploy_game_design(self):
         """Deploy game design to reflect design changes"""
         deploy_response = self.to_clone.post(Constant.DESIGN_DEPLOY, 
@@ -1049,6 +1152,7 @@ class PlayoffMigrationDesign(object):
 
         self.migrate_teams_design()
         self.migrate_metrics_design()
+        self.migrate_rules_design()
         self.migrate_actions_design()
         self.migrate_leaderboards_design()
 
