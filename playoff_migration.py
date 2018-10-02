@@ -23,12 +23,15 @@ class ParameterException(Exception):
 
 class Constant(object):
     """Class that define some useful costant"""
+    config = configparser.ConfigParser()
+    config.read("settings.ini")
 
-    VERSION = "latest"
-    TOTAL = "total"
-    PLAYER_ID = "atomasse"
+    VERSION = config.get("constant", "Version")
+    PLAYER_ID = config.get("constant", "Player_id")
+    CYCLE = config.get("constant", "Cycle")
+
     BIG_NUMBER = 10 ** 10
-    CYCLE = "alltime"
+    TOTAL = "total"
 
     SCORES = "/scores/"
 
@@ -755,80 +758,6 @@ class PostPlayoffData(object):
         self.logger.debug("action taken")
 
 
-class PatchPlayoffData(object):
-    """
-    Class that make PATCH call via Playoff client to modify data in the
-    Playoff game
-    """
-    def __init__(self, game: Playoff):
-        self.game = game
-        self.design_getter = GetPlayoffDesign(game)
-        self.logger = MigrationLogger.get_instance()
-
-    def json_score(self, metric_id, score):
-        """
-        Return json data accepted to json schema for call patch method
-
-        :param metric_id: metric_id to update
-        :param score: value to set the metric
-        :return: dict to use in patch_player_score
-        """
-        Utility.raise_empty_parameter_exception([metric_id, score])
-
-        metric_design = self.design_getter.get_single_metric_design(metric_id)
-        metric_type = metric_design['type']
-
-        data = {
-            "rewards": [{
-                "metric": {
-                    "id": metric_id,
-                    "type": metric_type
-                },
-                "verb": "set",
-                "value": str(score)
-            }]
-        }
-
-        self.logger.debug("returning json score")
-        self.logger.debug(data)
-
-        return data
-
-    def patch_player_score(self, player_id, data):
-        """
-        Update a player score
-
-        :param player_id: player id to update score
-        :param data: data necessary to update a score
-        """
-        Utility.raise_empty_parameter_exception([player_id, data])
-
-        self.logger.debug("updating score of player " + player_id)
-        self.logger.debug("data given")
-        self.logger.debug(data)
-
-        self.game.patch(Constant.ADMIN_PLAYERS + player_id + Constant.SCORES,
-                        {"player_id": player_id}, data)
-
-        self.logger.debug("scores updated")
-
-    def update_metric(self, player_id, metric_id, value):
-        """
-        Update a score of the given player in the given metric
-
-        :param player_id: player id
-        :param metric_id: metric id to update
-        :param value: new value of metric
-        """
-        Utility.raise_empty_parameter_exception([player_id, metric_id, value])
-
-        self.logger.info("updating metric " + metric_id + " of player " +
-                         player_id)
-
-        data = self.json_score(metric_id, value)
-        self.patch_player_score(player_id, data)
-
-
 class DeletePlayoffData(object):
     """Class that make DELETE call via Playoff client to erase data
     from the Playoff game
@@ -909,6 +838,150 @@ class DeletePlayoffData(object):
         self.delete_teams()
 
         self.logger.info("data deleted")
+
+
+class PatchPlayoffData(object):
+    """
+    Class that make PATCH call via Playoff client to modify data in the
+    Playoff game
+    """
+    def __init__(self, game: Playoff):
+        self.game = game
+        self.design_getter = GetPlayoffDesign(game)
+        self.logger = MigrationLogger.get_instance()
+
+    @staticmethod
+    def state_metric_parser(metric_constraints):
+        """
+        Return dict containing item name as a key and id as a value
+        :param metric_constraints: constraints to extract name and id
+        """
+        Utility.raise_empty_parameter_exception([metric_constraints])
+
+        set_metric_dict = {}
+
+        for item in metric_constraints['states']:
+            key = item['name']
+            value = item['id']
+
+            set_metric_dict.update({key: value})
+
+        return set_metric_dict
+
+    @staticmethod
+    def set_metric_parser(metric_constraints):
+        """
+        Return dict containing item name as a key and id as a value
+        :param metric_constraints: constraints to extract name and id
+        """
+        Utility.raise_empty_parameter_exception([metric_constraints])
+
+        set_metric_dict = {}
+
+        for item in metric_constraints['items']:
+            key = item['name']
+            value = item['id']
+
+            set_metric_dict.update({key: value})
+
+        return set_metric_dict
+
+    def value_parser(self, metric):
+        """
+        Return value formatted right to be used in patch method
+        :param metric: metric from retrieve information
+        """
+        Utility.raise_empty_parameter_exception([metric])
+
+        metric_id = metric['metric']['id']
+        metric_type = metric['metric']['type']
+        value = metric['value']
+
+        metric_design = self.design_getter.get_single_metric_design(metric_id)
+        metric_constraints = metric_design['constraints']
+
+        if metric_type == "point":
+            return value
+        elif metric_type == "set":
+            set_parser = self.set_metric_parser(metric_constraints)
+            cloned_value = {}
+
+            for score in value:
+                key = set_parser[score['name']]
+                value = score['count']
+
+                cloned_value.update({key: value})
+
+            return cloned_value
+        elif metric_type == "state":
+            state_parser = self.state_metric_parser(metric_constraints)
+
+            return state_parser[value['name']]
+
+    def json_metric_parser(self, metric):
+        """
+        Return json data accepted to json schema for call patch method
+
+        :param metric: metric data to create dict/json
+        :return: dict/json to use in patch_player_score
+        """
+        Utility.raise_empty_parameter_exception([metric])
+
+        metric_id = metric['metric']['id']
+        metric_type = metric['metric']['type']
+        value = self.value_parser(metric)
+
+        data = {
+            "rewards": [{
+                "metric": {
+                    "id": metric_id,
+                    "type": metric_type
+                },
+                "verb": "set",
+                "value": value
+            }]
+        }
+
+        self.logger.debug("returning json score")
+        self.logger.debug(data)
+
+        return data
+
+    def patch_player_score(self, player_id, data):
+        """
+        Update a player score
+
+        :param player_id: player id to update score
+        :param data: data necessary to update a score
+        """
+        Utility.raise_empty_parameter_exception([player_id, data])
+
+        self.logger.debug("updating score of player " + player_id)
+        self.logger.debug("data given")
+        self.logger.debug(data)
+
+        self.game.patch(Constant.ADMIN_PLAYERS + player_id + Constant.SCORES,
+                        {"player_id": player_id}, data)
+
+        self.logger.debug("scores updated")
+
+    def update_metric(self, player_id, metric_value):
+        """
+        Update a score of the given player in the given metric
+
+        :param player_id: player id
+        :param metric_value: metric data
+        """
+        Utility.raise_empty_parameter_exception([player_id, metric_value])
+
+        metric_id = metric_value['metric']['id']
+
+        self.logger.info("updating metric " + metric_id + " of player " +
+                         player_id)
+
+        # making json data for patch call
+        data = self.json_metric_parser(metric_value)
+        self.patch_player_score(player_id, data)
 
 
 # =======================
@@ -1046,14 +1119,11 @@ class PlayoffMigrationData(object):
         index = 0
 
         for score in filtered_scores:
-            metric = score['metric']['id']
-            value = int(score['value'])
-
             index += 1
             self.logger.debug("updating metric " + str(index) + " of " +
                               scores_count)
 
-            self.data_patcher.update_metric(player_id, metric, value)
+            self.data_patcher.update_metric(player_id, score)
 
         self.logger.info("updating metrics of " + player_id + "finished")
 
