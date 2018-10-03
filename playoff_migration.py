@@ -562,7 +562,7 @@ class GetPlayoffData(object):
             for team in teams['data']:
                 teams_id.append(team['id'])
 
-                self.logger.debug(team['id'] + "added to list")
+                self.logger.debug(team['id'] + " added to list")
 
         self.logger.info("returning list of teams id")
 
@@ -996,6 +996,7 @@ class PlayoffMigrationData(object):
         self.to_clone = cloned_client
 
         self.data_getter = GetPlayoffData(self.original)
+        self.data_getter_cloned = GetPlayoffData(self.to_clone)
 
         self.data_destroyer = DeletePlayoffData(self.to_clone)
         self.data_creator = PostPlayoffData(self.to_clone)
@@ -1041,8 +1042,10 @@ class PlayoffMigrationData(object):
 
         creation_data = {
             "id": player_data["id"],
-            "alias": player_data["alias"]
         }
+
+        if "alias" in player_data.keys():
+            creation_data.update({"alias": player_data["alias"]})
 
         self.data_creator.create_player(creation_data)
 
@@ -1127,6 +1130,43 @@ class PlayoffMigrationData(object):
 
         self.logger.info("updating metrics of " + player_id + "finished")
 
+    def normalize_scores(self):
+        """
+        Normalize scores of players in the cloned game
+
+        It is used to avoid inconsistency in case of manual score update in
+        the original game
+        """
+        self.logger.info("normalizing scores")
+
+        players_id = self.data_getter.get_players_by_id()
+
+        for player in players_id:
+            self.logger.debug("normalizing scores of player " + player)
+
+            origin_score = self.data_getter.get_metric_scores(player)
+
+            for score in origin_score:
+                # store cloned metric
+                metric_id = score['metric']['id']
+
+                self.logger.debug("normalizing scores of metric " + metric_id)
+
+                cloned_score = self.data_getter_cloned.get_single_metric_score(
+                    player,
+                    metric_id
+                )
+
+                # store values
+                origin_value = score['value']
+                cloned_value = cloned_score['value']
+
+                # patch metric
+                if origin_value != cloned_value:
+                    self.data_patcher.update_metric(player, score)
+
+        self.logger.info("scores normalized")
+
     def migrate_players(self):
         """Migrate players"""
         self.logger.info("migrating players")
@@ -1145,12 +1185,18 @@ class PlayoffMigrationData(object):
             self.migrate_player_data(player_data)
             self.migrate_player_in_teams(player_data)
 
-            if self.config.getboolean('player_feed', 'Feed'):
+            config_feed = self.config.get('player_feed', 'Feed')
+
+            if config_feed == "feed":
                 player_feed = self.data_getter.get_player_feed(player)
                 self.migrate_player_feed(player_id, player_feed)
-            else:
+            elif config_feed == "score":
                 player_scores = self.data_getter.get_metric_scores(player)
                 self.migrate_player_scores(player, player_scores)
+            elif config_feed == "both":
+                player_feed = self.data_getter.get_player_feed(player)
+                self.migrate_player_feed(player_id, player_feed)
+                self.normalize_scores()
 
         self.logger.info("players migration finished")
 
