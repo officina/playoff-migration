@@ -66,7 +66,7 @@ class MigrationLogger:
         else:
             config = configparser.ConfigParser()
             config.read("settings.ini")
-            logger_level = config.get("logger", "level").upper()
+            logger_level = config.get("logger", "Level").upper()
 
             MigrationLogger.__instance = logging.getLogger("migration_logger")
             MigrationLogger.__instance.setLevel(logging.DEBUG)
