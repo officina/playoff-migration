@@ -671,6 +671,54 @@ class PatchPlayoffDataTest(unittest.TestCase):
         )
 
         self.data_patcher = PatchPlayoffData(playoff_client)
+        self.data_getter = GetPlayoffData(playoff_client)
+
+        self.player_id = "dummy1"
+
+        # useful metrics
+        self.metric_point = {
+            "metric": {
+                "id": "point_metric",
+                "name": "PointMetric",
+                "type": "point"
+            },
+            "value": "8"
+        }
+
+        self.metric_set = {
+            "metric": {
+                "id": "set_metric",
+                "name": "SetMetric",
+                "type": "set"
+            },
+            "value": [{
+                "count": "1",
+                "description": "5 uccisioni di fila",
+                "name": "Spietato"
+            },
+                {
+                    "count": "1",
+                    "description": "10 uccisioni di fila",
+                    "name": "Irremovibile"
+                },
+                {
+                    "count": "1",
+                    "description": "20 uccisioni di fila",
+                    "name": "Medaglie son finite"
+                }]
+        }
+
+        self.metric_state = {
+            "metric": {
+                "id": "state_metric",
+                "name": "StateMetric",
+                "type": "state"
+            },
+            "value": {
+                "description": "",
+                "name": "Esperto"
+            }
+        }
 
     def test_metric_parsers(self):
         state_constraints = {
@@ -716,6 +764,252 @@ class PatchPlayoffDataTest(unittest.TestCase):
 
         self.assertEqual(state_result, state_method_result)
         self.assertEqual(set_result, set_method_result)
+
+    def test_value_parser(self):
+        # call the method and save result
+        point_parser_value = self.data_patcher.value_parser(self.metric_point)
+        set_parser_value = self.data_patcher.value_parser(self.metric_set)
+        state_parser_value = self.data_patcher.value_parser(self.metric_state)
+
+        # create excpected result
+        point_result = "8"
+
+        set_result = {
+            "spietato": "1",
+            "irremovibile": "1",
+            "medaglie_son_finite": "1"
+        }
+
+        state_result = "esperto"
+
+        # actual test
+        self.assertEqual(point_parser_value, point_result)
+        self.assertEqual(set_parser_value, set_result)
+        self.assertEqual(state_parser_value, state_result)
+
+    def test_json_metric_parser(self):
+        # call methods and store result
+        point_parser_res = self.data_patcher.json_metric_parser(
+            self.metric_point)
+        set_parser_res = self.data_patcher.json_metric_parser(self.metric_set)
+        state_parser_res = self.data_patcher.json_metric_parser(
+            self.metric_state)
+
+        # correct result
+        point_res = {
+            "rewards": [{
+                "metric": {
+                    "id": "point_metric",
+                    "type": "point"
+                },
+                "verb": "set",
+                "value": "8"
+            }]
+        }
+
+        set_res = {
+            "rewards": [{
+                "metric": {
+                    "id": "set_metric",
+                    "type": "set"
+                },
+                "verb": "set",
+                "value": {
+                    "spietato": "1",
+                    "irremovibile": "1",
+                    "medaglie_son_finite": "1"
+                }
+            }]
+        }
+
+        state_res = {
+            "rewards": [{
+                "metric": {
+                    "id": "state_metric",
+                    "type": "state"
+                },
+                "verb": "set",
+                "value": "esperto"
+            }]
+        }
+
+        # actual test
+        self.assertEqual(point_parser_res, point_res)
+        self.assertEqual(set_parser_res, set_res)
+        self.assertEqual(state_parser_res, state_res)
+
+    def test_patch_player_score(self):
+        # store actual data
+        # store ids
+        point_metric_id = self.metric_point['metric']['id']
+        set_metric_id = self.metric_set['metric']['id']
+        state_metric_id = self.metric_state['metric']['id']
+
+        # store metrics
+        point_metric = self.data_getter.get_single_metric_score(
+            self.player_id, point_metric_id)
+        set_metric = self.data_getter.get_single_metric_score(
+            self.player_id, set_metric_id)
+        state_metric = self.data_getter.get_single_metric_score(
+            self.player_id, state_metric_id)
+
+        # store value field
+        old_point_value = point_metric['value']
+        old_set_value = set_metric['value']
+        old_state_value = state_metric['value']
+
+        # create data to call patch method
+        new_point_metric = {
+            "rewards": [{
+                "metric": {
+                    "id": "point_metric",
+                    "type": "point"
+                },
+                "verb": "set",
+                "value": "20"
+            }]
+        }
+        new_set_metric = {
+            "rewards": [{
+                "metric": {
+                    "id": "set_metric",
+                    "type": "set"
+                },
+                "verb": "set",
+                "value": {
+                    "spietato": "1",
+                    "irremovibile": "0",
+                    "medaglie_son_finite": "0"
+                }
+            }]
+        }
+        new_state_metric = {
+            "rewards": [{
+                "metric": {
+                    "id": "state_metric",
+                    "type": "state"
+                },
+                "verb": "set",
+                "value": "nabbo"
+            }]
+        }
+
+        old_point_metric = {
+            "rewards": [{
+                "metric": {
+                    "id": "point_metric",
+                    "type": "point"
+                },
+                "verb": "set",
+                "value": "8"
+            }]
+        }
+        old_set_metric = {
+            "rewards": [{
+                "metric": {
+                    "id": "set_metric",
+                    "type": "set"
+                },
+                "verb": "set",
+                "value": {
+                    "spietato": "1",
+                    "irremovibile": "1",
+                    "medaglie_son_finite": "1"
+                }
+            }]
+        }
+        old_state_metric = {
+            "rewards": [{
+                "metric": {
+                    "id": "state_metric",
+                    "type": "state"
+                },
+                "verb": "set",
+                "value": "esperto"
+            }]
+        }
+
+        # call patch method
+        self.data_patcher.patch_player_score(self.player_id, new_point_metric)
+        self.data_patcher.patch_player_score(self.player_id, new_set_metric)
+        self.data_patcher.patch_player_score(self.player_id, new_state_metric)
+
+        # store metrics
+        point_metric = self.data_getter.get_single_metric_score(
+            self.player_id, point_metric_id)
+        set_metric = self.data_getter.get_single_metric_score(
+            self.player_id, set_metric_id)
+        state_metric = self.data_getter.get_single_metric_score(
+            self.player_id, state_metric_id)
+
+        # store new value field
+        new_point_value = point_metric['value']
+        new_set_value = set_metric['value']
+        new_state_value = state_metric['value']
+        set_value = [{
+            "count": "1",
+            "description": "5 uccisioni di fila",
+            "name": "Spietato"
+        }]
+        state_value = {
+            "description": "",
+            "name": "Nabbo"
+        }
+
+        # test if new value are right and different from old value
+        self.assertEqual(new_point_value, "20")
+        self.assertEqual(new_set_value, set_value)
+        self.assertEqual(new_state_value, state_value)
+
+        self.assertTrue(old_point_value != new_point_value)
+        self.assertTrue(old_set_value != new_set_value)
+        self.assertTrue(old_state_value != new_state_value)
+
+        # recall patch method with old value
+        self.data_patcher.patch_player_score(self.player_id, old_point_metric)
+        self.data_patcher.patch_player_score(self.player_id, old_set_metric)
+        self.data_patcher.patch_player_score(self.player_id, old_state_metric)
+
+        # store metrics
+        point_metric = self.data_getter.get_single_metric_score(
+            self.player_id, point_metric_id)
+        set_metric = self.data_getter.get_single_metric_score(
+            self.player_id, set_metric_id)
+        state_metric = self.data_getter.get_single_metric_score(
+            self.player_id, state_metric_id)
+
+        # store value
+        old_point_value = point_metric['value']
+        old_set_value = set_metric['value']
+        old_state_value = state_metric['value']
+        set_value = [{
+            "count": "1",
+            "description": "5 uccisioni di fila",
+            "name": "Spietato"
+        },
+            {
+                "count": "1",
+                "description": "10 uccisioni di fila",
+                "name": "Irremovibile"
+            },
+            {
+                "count": "1",
+                "description": "20 uccisioni di fila",
+                "name": "Medaglie son finite"
+            }]
+        state_value = {
+            "description": "",
+            "name": "Esperto"
+        }
+
+        # test if new value are right and different from old value
+        self.assertEqual(old_point_value, "8")
+        self.assertEqual(old_set_value, set_value)
+        self.assertEqual(old_state_value, state_value)
+
+        self.assertTrue(old_point_value != new_point_value)
+        self.assertTrue(old_set_value != new_set_value)
+        self.assertTrue(old_state_value != new_state_value)
 
 
 class MigrationDataTest(unittest.TestCase):
