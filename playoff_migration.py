@@ -1183,27 +1183,28 @@ class PlayoffMigrationData(object):
         players_by_id = self.data_getter.get_players_by_id()
 
         for player in players_by_id:
-            self.logger.debug("migrating player " + player)
-
             player_data = self.data_getter.get_player_profile(player)
 
             player_id = {"player_id": player}
 
-            self.migrate_player_data(player_data)
-            self.migrate_player_in_teams(player_data)
+            if not player_data['alias'].startswith("event_"):
+                self.logger.debug("migrating player " + player)
 
-            config_feed = self.config.get('player_feed', 'Feed')
+                self.migrate_player_data(player_data)
+                self.migrate_player_in_teams(player_data)
 
-            player_feed = self.data_getter.get_player_feed(player)
-            player_scores = self.data_getter.get_metric_scores(player)
+                config_feed = self.config.get('player_feed', 'Feed')
 
-            if config_feed == "feed" and player_feed:
-                self.migrate_player_feed(player_id, player_feed)
-            elif config_feed == "score" and player_scores:
-                self.migrate_player_scores(player, player_scores)
-            elif config_feed == "both" and player_feed:
-                self.migrate_player_feed(player_id, player_feed)
-                self.normalize_scores()
+                player_feed = self.data_getter.get_player_feed(player)
+                player_scores = self.data_getter.get_metric_scores(player)
+
+                if config_feed == "feed" and player_feed:
+                    self.migrate_player_feed(player_id, player_feed)
+                elif config_feed == "score" and player_scores:
+                    self.migrate_player_scores(player, player_scores)
+                elif config_feed == "both" and player_feed:
+                    self.migrate_player_feed(player_id, player_feed)
+                    self.normalize_scores()
 
         self.logger.info("players migration finished")
 
