@@ -1081,7 +1081,7 @@ class PlayoffMigrationData(object):
         :param dict player_feed: player feed (can be empty)
         :raise ParameterException: if player_id is empty
         """
-        Utility.raise_empty_parameter_exception([player_id])
+        Utility.raise_empty_parameter_exception([player_id, player_feed])
 
         feed_count = str(len(player_feed))
         index = 0
@@ -1194,14 +1194,14 @@ class PlayoffMigrationData(object):
 
             config_feed = self.config.get('player_feed', 'Feed')
 
-            if config_feed == "feed":
-                player_feed = self.data_getter.get_player_feed(player)
+            player_feed = self.data_getter.get_player_feed(player)
+            player_scores = self.data_getter.get_metric_scores(player)
+
+            if config_feed == "feed" and player_feed:
                 self.migrate_player_feed(player_id, player_feed)
-            elif config_feed == "score":
-                player_scores = self.data_getter.get_metric_scores(player)
+            elif config_feed == "score" and player_scores:
                 self.migrate_player_scores(player, player_scores)
-            elif config_feed == "both":
-                player_feed = self.data_getter.get_player_feed(player)
+            elif config_feed == "both" and player_feed:
                 self.migrate_player_feed(player_id, player_feed)
                 self.normalize_scores()
 
