@@ -64,10 +64,14 @@ class MigrationLogger:
         if MigrationLogger.__instance is not None:
             raise Exception("This class is a singleton!")
         else:
+            config = configparser.ConfigParser()
+            config.read("settings.ini")
+            logger_level = config.get("logger", "level").upper()
+
             MigrationLogger.__instance = logging.getLogger("migration_logger")
             MigrationLogger.__instance.setLevel(logging.DEBUG)
             ch = logging.FileHandler(filename="migration.log", mode="w")
-            ch.setLevel(logging.DEBUG)
+            ch.setLevel(logger_level)
             formatter = logging.Formatter(
                 "%(asctime)s - %(levelname)s - %(message)s",
                 "%m/%d/%Y %I:%M:%S %p")
@@ -1145,6 +1149,9 @@ class PlayoffMigrationData(object):
             self.logger.debug("normalizing scores of player " + player)
 
             origin_score = self.data_getter.get_metric_scores(player)
+            # filter out compound metrics
+            origin_score = [score for score in origin_score
+                            if score['metric']['type'] != 'compound']
 
             for score in origin_score:
                 # store cloned metric
