@@ -992,6 +992,230 @@ class PatchPlayoffData(object):
 # MIGRATION CLASS
 # =======================
 
+class PlayoffMigrationDesign(object):
+    """Class that make a migration of design from a Playoff game to an other"""
+
+    def __init__(self, original_client, cloned_client):
+        self.original = original_client
+        self.to_clone = cloned_client
+
+        self.design_getter = GetPlayoffDesign(self.original)
+        self.design_destroyer = DeletePlayoffDesign(self.to_clone)
+        self.design_creator = PostPlayoffDesign(self.to_clone)
+        self.logger = MigrationLogger.get_instance()
+
+    def migrate_teams_design(self):
+        """Migrate teams design"""
+        self.logger.info("migrating teams design")
+
+        teams_design = self.design_getter.get_teams_design()
+
+        self.design_destroyer.delete_teams_design()
+
+        for team in teams_design:
+            self.logger.debug("migrating team design " + team['id'])
+
+            design_team = self.design_getter.get_single_team_design(team['id'])
+
+            team_data = {
+                'name': design_team['name'],
+                'id': design_team['id'],
+                'permissions': design_team['permissions'],
+                'creator_roles': design_team['creator_roles'],
+                'settings': design_team['settings'],
+                '_hues': design_team['_hues']
+            }
+
+            if 'description' in design_team.keys():
+                team_data.update({'description': design_team['description']})
+
+            self.design_creator.create_team_design(team_data)
+
+        self.logger.info("teams design migration finished")
+
+    def migrate_list_of_metrics(self, metrics_list):
+        """Migrate a list of metrics, list can be empty
+
+        :param list metrics_list: list of metrics design
+        """
+        for design_metric in metrics_list:
+            self.logger.debug("migrating " + design_metric['id'] + " design")
+
+            metric_data = {
+                "id": design_metric['id'],
+                "name": design_metric['name'],
+                "type": design_metric['type'],
+                "constraints": design_metric['constraints']
+            }
+
+            if "description" in design_metric.keys():
+                metric_data.update({"description":
+                                        design_metric["description"]})
+
+            self.design_creator.create_metric_design(metric_data)
+
+    def migrate_metrics_design(self):
+        """Migrate metrics design"""
+        self.logger.info("migrating metrics design")
+
+        metrics_design = self.design_getter.get_metrics_design()
+
+        self.design_destroyer.delete_metrics_design()
+
+        # lists to save coumpound and non-coumpound metrics
+        non_coumpound_metrics = []
+        coumpound_metrics = []
+
+        for metric in metrics_design:
+            design_metric = self.design_getter \
+                .get_single_metric_design(metric['id'])
+
+            if design_metric['type'] == "compound":
+                coumpound_metrics.append(design_metric)
+            else:
+                non_coumpound_metrics.append(design_metric)
+
+        self.logger.info("migrating not coumpound metrics design")
+
+        self.migrate_list_of_metrics(non_coumpound_metrics)
+
+        self.logger.info("migrating not coumpound metrics design finished")
+
+        self.logger.info("migrating coumpound metrics design")
+
+        self.migrate_list_of_metrics(coumpound_metrics)
+
+        self.logger.info("migrating coumpound metrics design finished")
+
+        self.logger.info("metrics design migration finished")
+
+    def migrate_actions_design(self):
+        """Migrate actions design"""
+        self.logger.info("migrating actions design")
+
+        actions_design = self.design_getter.get_actions_design()
+
+        self.design_destroyer.delete_actions_design()
+
+        for action in actions_design:
+            self.logger.debug("migrating action design " + action['id'])
+
+            design_action = self.design_getter \
+                .get_single_action_design(action['id'])
+
+            action_data = {
+                "id": design_action['id'],
+                "name": design_action['name'],
+                "requires": design_action['requires'],
+                "rules": design_action['rules'],
+                "variables": design_action['variables'],
+                "image": design_action['image']
+            }
+
+            if "description" in design_action.keys():
+                action_data.update({"description":
+                                        design_action["description"]})
+
+            self.design_creator.create_action_design(action_data)
+
+        self.logger.info("actions design migration finished")
+
+    def migrate_leaderboards_design(self):
+        """Migrate leaderboards design"""
+        self.logger.info("migrating leaderboards design")
+
+        leaderboards_design = self.design_getter.get_leaderboards_design()
+
+        self.design_destroyer.delete_leaderboards_design()
+
+        for leaderboard in leaderboards_design:
+            self.logger.debug("migrating leaderboard design " +
+                              leaderboard['id'])
+
+            design_leaderboard = self.design_getter \
+                .get_single_leaderboard_design(leaderboard['id'])
+
+            leaderboard_data = {
+                "id": design_leaderboard['id'],
+                "name": design_leaderboard['name'],
+                "entity_type": design_leaderboard['entity_type'],
+                "scope": design_leaderboard['scope'],
+                "metric": design_leaderboard['metric'],
+                "cycles": design_leaderboard['cycles']
+            }
+
+            if "description" in design_leaderboard.keys():
+                leaderboard_data.update({"description":
+                                             design_leaderboard[
+                                                 "description"]})
+
+            self.design_creator.create_leaderboard_design(leaderboard_data)
+
+        self.logger.info("leaderboards design migration finished")
+
+    def migrate_rules_design(self):
+        """Migrate rules design"""
+        self.logger.info("migrating rules design")
+
+        rules_design = self.design_getter.get_rules_design()
+
+        self.design_destroyer.delete_rules_design()
+
+        for rule in rules_design:
+            self.logger.debug("migrating rule design " + rule['id'])
+
+            design_rule = self.design_getter.get_single_rule_design(
+                rule_id=rule['id'])
+
+            rule_data = {
+                "id": design_rule['id'],
+                "name": design_rule['name'],
+                "type": design_rule['type'],
+            }
+
+            if design_rule['type'] == 'achievement':
+                rule_data['achievement'] = design_rule['achievement']
+                rule_data['requires'] = design_rule['requires']
+            elif design_rule['type'] == "level":
+                rule_data['base_metric'] = design_rule['base_metric']
+                rule_data['level_metric'] = design_rule['level_metric']
+                rule_data['levels'] = design_rule['levels']
+                if "tags" in design_rule.keys():
+                    rule_data['tags'] = design_rule['tags']
+            elif design_rule['type'] == "custom":
+                rule_data['rules'] = design_rule['rules']
+                rule_data['variables'] = design_rule['variables']
+                if "tags" in design_rule.keys():
+                    rule_data['tags'] = design_rule['tags']
+
+            self.design_creator.create_rule_design(rule_data)
+
+        self.logger.info("rules design migration finished")
+
+    def deploy_game_design(self):
+        """Deploy game design to reflect design changes"""
+        deploy_response = self.to_clone.post(Constant.DESIGN_DEPLOY,
+                                             {"player_id": Constant.PLAYER_ID},
+                                             {})
+
+        self.logger.info("Desploy response: ")
+        self.logger.info(deploy_response)
+
+    def migrate_all_design(self):
+        """Migrate all design"""
+        self.logger.info("starting design migration")
+
+        self.migrate_teams_design()
+        self.migrate_metrics_design()
+        self.migrate_rules_design()
+        self.migrate_actions_design()
+        self.migrate_leaderboards_design()
+
+        self.deploy_game_design()
+
+        self.logger.info("design migration finished")
+
+
 class PlayoffMigrationData(object):
     """Class that make a migration of data from a Playoff game to an other"""
 
@@ -1215,226 +1439,3 @@ class PlayoffMigrationData(object):
         self.migrate_players()
 
         self.logger.info("data migration finished")
-
-
-class PlayoffMigrationDesign(object):
-    """Class that make a migration of design from a Playoff game to an other"""
-
-    def __init__(self, original_client, cloned_client):
-        self.original = original_client
-        self.to_clone = cloned_client
-
-        self.design_getter = GetPlayoffDesign(self.original)
-        self.design_destroyer = DeletePlayoffDesign(self.to_clone)
-        self.design_creator = PostPlayoffDesign(self.to_clone)
-        self.logger = MigrationLogger.get_instance()
-
-    def migrate_teams_design(self):
-        """Migrate teams design"""
-        self.logger.info("migrating teams design")
-
-        teams_design = self.design_getter.get_teams_design()
-
-        self.design_destroyer.delete_teams_design()
-
-        for team in teams_design:
-            self.logger.debug("migrating team design " + team['id'])
-
-            design_team = self.design_getter.get_single_team_design(team['id'])
-
-            team_data = {
-                'name': design_team['name'],
-                'id': design_team['id'],
-                'permissions': design_team['permissions'],
-                'creator_roles': design_team['creator_roles'],
-                'settings': design_team['settings'],
-                '_hues': design_team['_hues']
-            }
-
-            if 'description' in design_team.keys():
-                team_data.update({'description': design_team['description']})
-
-            self.design_creator.create_team_design(team_data)
-
-        self.logger.info("teams design migration finished")
-
-    def migrate_list_of_metrics(self, metrics_list):
-        """Migrate a list of metrics, list can be empty
-
-        :param list metrics_list: list of metrics design
-        """
-        for design_metric in metrics_list:
-            self.logger.debug("migrating " + design_metric['id'] + " design")
-
-            metric_data = {
-                "id": design_metric['id'],
-                "name": design_metric['name'],
-                "type": design_metric['type'],
-                "constraints": design_metric['constraints']
-            }
-
-            if "description" in design_metric.keys():
-                metric_data.update({"description":
-                                    design_metric["description"]})
-
-            self.design_creator.create_metric_design(metric_data)
-
-    def migrate_metrics_design(self):
-        """Migrate metrics design"""
-        self.logger.info("migrating metrics design")
-
-        metrics_design = self.design_getter.get_metrics_design()
-
-        self.design_destroyer.delete_metrics_design()
-
-        # lists to save coumpound and non-coumpound metrics
-        non_coumpound_metrics = []
-        coumpound_metrics = []
-
-        for metric in metrics_design:
-            design_metric = self.design_getter \
-                .get_single_metric_design(metric['id'])
-
-            if design_metric['type'] == "compound":
-                coumpound_metrics.append(design_metric)
-            else:
-                non_coumpound_metrics.append(design_metric)
-
-        self.logger.info("migrating not coumpound metrics design")
-
-        self.migrate_list_of_metrics(non_coumpound_metrics)
-
-        self.logger.info("migrating not coumpound metrics design finished")
-
-        self.logger.info("migrating coumpound metrics design")
-
-        self.migrate_list_of_metrics(coumpound_metrics)
-
-        self.logger.info("migrating coumpound metrics design finished")
-
-        self.logger.info("metrics design migration finished")
-
-    def migrate_actions_design(self):
-        """Migrate actions design"""
-        self.logger.info("migrating actions design")
-
-        actions_design = self.design_getter.get_actions_design()
-
-        self.design_destroyer.delete_actions_design()
-
-        for action in actions_design:
-            self.logger.debug("migrating action design " + action['id'])
-
-            design_action = self.design_getter\
-                .get_single_action_design(action['id'])
-
-            action_data = {
-                "id": design_action['id'],
-                "name": design_action['name'],
-                "requires": design_action['requires'],
-                "rules": design_action['rules'],
-                "variables": design_action['variables'],
-                "image": design_action['image']
-            }
-
-            if "description" in design_action.keys():
-                action_data.update({"description":
-                                    design_action["description"]})
-
-            self.design_creator.create_action_design(action_data)
-
-        self.logger.info("actions design migration finished")
-
-    def migrate_leaderboards_design(self):
-        """Migrate leaderboards design"""
-        self.logger.info("migrating leaderboards design")
-
-        leaderboards_design = self.design_getter.get_leaderboards_design()
-
-        self.design_destroyer.delete_leaderboards_design()
-
-        for leaderboard in leaderboards_design:
-            self.logger.debug("migrating leaderboard design " +
-                              leaderboard['id'])
-
-            design_leaderboard = self.design_getter\
-                .get_single_leaderboard_design(leaderboard['id'])
-
-            leaderboard_data = {
-                "id": design_leaderboard['id'],
-                "name": design_leaderboard['name'],
-                "entity_type": design_leaderboard['entity_type'],
-                "scope": design_leaderboard['scope'],
-                "metric": design_leaderboard['metric'],
-                "cycles": design_leaderboard['cycles']
-            }
-
-            if "description" in design_leaderboard.keys():
-                leaderboard_data.update({"description":
-                                        design_leaderboard["description"]})
-
-            self.design_creator.create_leaderboard_design(leaderboard_data)
-
-        self.logger.info("leaderboards design migration finished")
-
-    def migrate_rules_design(self):
-        """Migrate rules design"""
-        self.logger.info("migrating rules design")
-
-        rules_design = self.design_getter.get_rules_design()
-
-        self.design_destroyer.delete_rules_design()
-
-        for rule in rules_design:
-            self.logger.debug("migrating rule design " + rule['id'])
-
-            design_rule = self.design_getter.get_single_rule_design(
-                rule_id=rule['id'])
-
-            rule_data = {
-                "id": design_rule['id'],
-                "name": design_rule['name'],
-                "type": design_rule['type'],
-            }
-
-            if design_rule['type'] == 'achievement':
-                rule_data['achievement'] = design_rule['achievement']
-                rule_data['requires'] = design_rule['requires']
-            elif design_rule['type'] == "level":
-                rule_data['base_metric'] = design_rule['base_metric']
-                rule_data['level_metric'] = design_rule['level_metric']
-                rule_data['levels'] = design_rule['levels']
-                if "tags" in design_rule.keys():
-                    rule_data['tags'] = design_rule['tags']
-            elif design_rule['type'] == "custom":
-                rule_data['rules'] = design_rule['rules']
-                rule_data['variables'] = design_rule['variables']
-                if "tags" in design_rule.keys():
-                    rule_data['tags'] = design_rule['tags']
-
-            self.design_creator.create_rule_design(rule_data)
-
-        self.logger.info("rules design migration finished")
-
-    def deploy_game_design(self):
-        """Deploy game design to reflect design changes"""
-        deploy_response = self.to_clone.post(Constant.DESIGN_DEPLOY, 
-                                             {"player_id": Constant.PLAYER_ID}, 
-                                             {})
-        
-        self.logger.info("Desploy response: ")
-        self.logger.info(deploy_response)
-
-    def migrate_all_design(self):
-        """Migrate all design"""
-        self.logger.info("starting design migration")
-
-        self.migrate_teams_design()
-        self.migrate_metrics_design()
-        self.migrate_rules_design()
-        self.migrate_actions_design()
-        self.migrate_leaderboards_design()
-
-        self.deploy_game_design()
-
-        self.logger.info("design migration finished")
