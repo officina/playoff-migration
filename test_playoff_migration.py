@@ -508,7 +508,6 @@ class GetPlayoffDataTest(unittest.TestCase):
             self.assertTrue(key in score_data['metric'].keys())
 
 
-# TODO: change keys test game
 class PostDeletePlayoffDataTest(unittest.TestCase):
 
     def setUp(self):
