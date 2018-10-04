@@ -106,7 +106,7 @@ class ExportRawDesign(Export):
         """
         self.logger.info("exporting raw leaderboards design")
 
-        with open(self.path + "leadboards_raw_design.json", "w+") as file:
+        with open(self.path + "leaderboards_raw_design.json", "w+") as file:
             cloned_leaderboards_design = []
             leaderboards_id = self.design_getter.get_leaderboards_design()
 
