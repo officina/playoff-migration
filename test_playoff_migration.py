@@ -435,7 +435,7 @@ class GetPlayoffDataTest(unittest.TestCase):
         self.assertTrue(isinstance(game_id, str))
 
     def test_team_info(self):
-        team_id = "test_team_instance"
+        team_id = "team_test_instance"
         team_info_keys = ['id', 'name', 'definition', 'roles']
 
         team_info = self.data_getter.get_team_info(team_id)
@@ -1015,19 +1015,22 @@ class MigrationDataTest(unittest.TestCase):
 
     def setUp(self):
         original = Utility.get_playoff_client(
-            "ORIGINAL_CLIENT_ID",
-            "ORIGINAL_CLIENT_SECRET",
-            "ORIGINAL_HOSTNAME"
+            "API_TEST_CLIENT_ID",
+            "API_TEST_CLIENT_SECRET",
+            "API_TEST_HOSTNAME"
         )
 
         to_clone = Utility.get_playoff_client(
-            "CLONED_CLIENT_ID",
-            "CLONED_CLIENT_SECRET",
-            "CLONED_HOSTNAME"
+            "API_TEST_CLONED_CLIENT_ID",
+            "API_TEST_CLONED_CLIENT_SECRET",
+            "API_TEST_CLONED_HOSTNAME"
         )
 
         self.migrate_data = PlayoffMigrationData(original, to_clone)
         self.data_getter_cloned = GetPlayoffData(to_clone)
+
+        migration_design = PlayoffMigrationDesign(original, to_clone)
+        migration_design.deploy_game_design()
 
     def test1_teams_migration(self):
         origin_teams_id = self.migrate_data.data_getter.get_teams_by_id()
@@ -1078,15 +1081,15 @@ class MigrationDesignTest(unittest.TestCase):
 
     def setUp(self):
         original = Utility.get_playoff_client(
-            "ORIGINAL_CLIENT_ID",
-            "ORIGINAL_CLIENT_SECRET",
-            "ORIGINAL_HOSTNAME"
+            "API_TEST_CLIENT_ID",
+            "API_TEST_CLIENT_SECRET",
+            "API_TEST_HOSTNAME"
         )
 
         to_clone = Utility.get_playoff_client(
-            "CLONED_CLIENT_ID",
-            "CLONED_CLIENT_SECRET",
-            "CLONED_HOSTNAME"
+            "API_TEST_CLONED_CLIENT_ID",
+            "API_TEST_CLONED_CLIENT_SECRET",
+            "API_TEST_CLONED_HOSTNAME"
         )
 
         self.migrate_design = PlayoffMigrationDesign(original, to_clone)
@@ -1178,3 +1181,7 @@ class MigrationDesignTest(unittest.TestCase):
                 .get_single_leaderboard_design(board_id)
 
             self.assertEqual(origin_design, cloned_design)
+
+
+if __name__ == '__main__':
+    unittest.main()

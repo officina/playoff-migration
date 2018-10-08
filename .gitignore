@@ -3,9 +3,17 @@ __pycache__
 .idea
 .env
 
-### .log file
+# .log file
 migration.log
 
-### folder
-playoff-data
+# Folder
+playoff-data/
 
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/

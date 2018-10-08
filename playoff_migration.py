@@ -1050,7 +1050,7 @@ class PlayoffMigrationDesign(object):
 
             if "description" in design_metric.keys():
                 metric_data.update({"description":
-                                        design_metric["description"]})
+                                    design_metric["description"]})
 
             self.design_creator.create_metric_design(metric_data)
 
@@ -1114,7 +1114,7 @@ class PlayoffMigrationDesign(object):
 
             if "description" in design_action.keys():
                 action_data.update({"description":
-                                        design_action["description"]})
+                                    design_action["description"]})
 
             self.design_creator.create_action_design(action_data)
 
@@ -1141,13 +1141,13 @@ class PlayoffMigrationDesign(object):
                 "entity_type": design_leaderboard['entity_type'],
                 "scope": design_leaderboard['scope'],
                 "metric": design_leaderboard['metric'],
-                "cycles": design_leaderboard['cycles']
+                "cycles": design_leaderboard['cycles'],
+                "requires": design_leaderboard['requires']
             }
 
             if "description" in design_leaderboard.keys():
-                leaderboard_data.update({"description":
-                                             design_leaderboard[
-                                                 "description"]})
+                leaderboard_data.update({"description": design_leaderboard[
+                                         "description"]})
 
             self.design_creator.create_leaderboard_design(leaderboard_data)
 
