@@ -68,23 +68,24 @@ class PlayoffMigration(object):
         env_path = Path('.') / '.env'
         load_dotenv(dotenv_path=env_path)
         self._original = Playoff(
-            hostname='playoff.cc',
-            client_id=os.environ["MYGENERALI_PLAYOFF_CC_CLIENT_ID"],
-            client_secret=os.environ["MYGENERALI_PLAYOFF_CC_CLIENT_SECRET"],
+            hostname='playoffgenerali.it',
+            client_id=os.environ["ORIGIN_PLAYOFF_CLIENT_ID"],
+            client_secret=os.environ["ORIGIN_PLAYOFF_CLIENT_SECRET"],
             type='client',
             allow_unsecure=True
         )
         self._cloned = Playoff(
-            hostname='playoffgenerali.it',
-            client_id=os.environ["MYGENERALI_PLAYOFF_GENERALI_CLIENT_ID"],
-            client_secret=os.environ["MYGENERALI_PLAYOFF_GENERALI_CLIENT_SECRET"],
+
+            hostname='playoff.cc',
+            client_id=os.environ["DESTINATION_PLAYOFF_CLIENT_ID"],
+            client_secret=os.environ["DESTINATION_PLAYOFF_CLIENT_SECRET"],
             type='client',
             allow_unsecure=True
         )
         self._scoped = Playoff(
-            hostname='playoffgenerali.it',
-            client_id=os.environ["MYGENERALI_PLAYOFF_GENERALI_CLIENT_ID"],
-            client_secret=os.environ["MYGENERALI_PLAYOFF_GENERALI_CLIENT_SECRET"],
+            hostname='playoff.cc',
+            client_id=os.environ["DESTINATION_PLAYOFF_CLIENT_ID"],
+            client_secret=os.environ["DESTINATION_PLAYOFF_CLIENT_ID"],
             type='client',
             allow_unsecure=True
         )
