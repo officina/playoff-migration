@@ -72,7 +72,7 @@ class PlayoffMigration(object):
             client_id=os.environ["ORIGIN_PLAYOFF_CLIENT_ID"],
             client_secret=os.environ["ORIGIN_PLAYOFF_CLIENT_SECRET"],
             type='client',
-            allow_unsecure=True
+            # allow_unsecure=True
         )
         self._cloned = Playoff(
 
@@ -85,7 +85,7 @@ class PlayoffMigration(object):
         self._scoped = Playoff(
             hostname='playoff.cc',
             client_id=os.environ["DESTINATION_PLAYOFF_CLIENT_ID"],
-            client_secret=os.environ["DESTINATION_PLAYOFF_CLIENT_ID"],
+            client_secret=os.environ["DESTINATION_PLAYOFF_CLIENT_SECRET"],
             type='client',
             allow_unsecure=True
         )
